@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#f2eadc" />
   <meta name="description" content="CAFFIEND MOMENTS — 기다리는 순간도, 카피엔드답게." />
+  <meta name="color-scheme" content="light" />
   <title>CAFFIEND MOMENTS — RISE</title>
   <link rel="stylesheet" href="./style.css" />
 </head>
@@ -15,7 +16,9 @@
         <span class="brand-symbol">C</span>
         <span class="brand-word"><strong>CAFFIEND</strong><small>MOMENTS</small></span>
       </a>
-      <button id="soundBtn" class="utility-btn" type="button" aria-label="진동 피드백 켜기/끄기"><span class="utility-dot"></span><span id="hapticText">HAPTIC ON</span></button>
+      <button id="soundBtn" class="utility-btn" type="button" aria-label="진동 피드백 켜기/끄기">
+        <span class="utility-dot"></span><span id="hapticText">HAPTIC ON</span>
+      </button>
     </header>
 
     <section id="introScreen" class="screen active" aria-labelledby="introTitle">
@@ -24,7 +27,7 @@
       <div class="hero-copy">
         <p class="kicker">CAFFIEND WAITING EXPERIENCE</p>
         <h1 id="introTitle">기다리는 순간도,<br /><em>카피엔드답게.</em></h1>
-        <p class="subcopy">오늘의 메뉴가 완성되는 동안, 수플레가 가장 폭신해지는 순간을 찾아보세요. 짧은 플레이가 기다림을 하나의 기억으로 바꿉니다.</p>
+        <p class="subcopy">오늘의 디저트가 완성되는 동안, 가장 폭신한 순간을 찾아보세요. 짧은 플레이가 기다림을 하나의 기억으로 바꿉니다.</p>
       </div>
 
       <div class="brand-promise">
@@ -32,17 +35,38 @@
         <p>맛있는 메뉴와 기분 좋은 기다림,<br />더 좋은 경험을 선물하는 공간.</p>
       </div>
 
+      <div id="challengeBanner" class="challenge-banner hidden">
+        <div><span>FRIEND CHALLENGE</span><strong><b id="challengeTarget">0</b>점을 넘어보세요.</strong></div>
+        <span class="challenge-arrow">↗</span>
+      </div>
+
       <div class="hero-object" aria-hidden="true">
         <div class="hero-orbit orbit-one"></div><div class="hero-orbit orbit-two"></div>
-        <div class="hero-souffle-wrap"><div class="souffle hero-souffle"><div class="souffle-top"></div><div class="season-garnish"></div></div><div class="ramekin hero-ramekin"></div><div class="plate hero-plate"></div></div>
+        <div class="hero-souffle-wrap">
+          <div class="souffle hero-souffle"><div class="souffle-top"></div><div class="season-garnish"></div></div>
+          <div class="ramekin hero-ramekin"></div><div class="plate hero-plate"></div>
+        </div>
         <div class="hero-caption"><span>25 SEC</span><span>ONE TAP</span><span>FOUR SEASONS</span></div>
       </div>
 
-      <div class="season-campaign-card" id="seasonCampaignCard">
+      <section class="season-campaign-card" aria-label="현재 시즌 캠페인">
         <div class="season-campaign-meta"><span id="seasonCampaign">SEASON 03</span><small id="seasonMode">RHYTHM MODE</small></div>
         <strong id="seasonStoryHeadline">기다림에도 리듬이 있습니다</strong>
         <p id="seasonStoryBody">카피엔드의 계절을 플레이로 먼저 만나보세요.</p>
-      </div>
+      </section>
+
+      <section class="store-board intro-board" aria-label="오늘의 기록">
+        <div class="panel-title-row">
+          <div><span>TODAY AT CAFFIEND</span><strong>오늘의 RISE</strong></div>
+          <span id="leaderboardStatus" class="status-chip"><i></i>LOCAL PREVIEW</span>
+        </div>
+        <div class="store-best-row">
+          <div><small>TOP RECORD</small><strong id="introStoreBest">0</strong></div>
+          <div class="rank-quiet"><small>MY POSITION</small><strong id="introRank">—</strong></div>
+        </div>
+        <div id="introTop" class="mini-ranking"><p>첫 기록이 오늘의 기준이 됩니다.</p></div>
+        <p id="boardDisclosure" class="disclosure">매장 전체 실시간 순위는 서버 연결 후 활성화됩니다.</p>
+      </section>
 
       <div class="season-picker-wrap">
         <div class="section-label-row"><span>FOUR SEASONS</span><small>계절마다 다른 리듬과 난이도</small></div>
@@ -54,6 +78,17 @@
         </div>
       </div>
 
+      <section class="passport-card" aria-label="사계절 패스포트">
+        <div class="panel-title-row">
+          <div><span>FOUR SEASONS PASSPORT</span><strong>계절을 모으는 또 하나의 이유</strong></div>
+          <span id="passportCount" class="passport-count">0 / 4</span>
+        </div>
+        <div class="passport-stamps" aria-hidden="true">
+          <span data-passport="spring">SP</span><span data-passport="summer">SU</span><span data-passport="autumn">AU</span><span data-passport="winter">WI</span>
+        </div>
+        <p id="passportCopy">카피엔드의 네 계절을 하나씩 모아보세요.</p>
+      </section>
+
       <div class="play-mode-card">
         <div class="section-label-row"><span>PLAY MODE</span><small>혼자 또는 함께</small></div>
         <div class="mode-toggle" role="group" aria-label="플레이 모드">
@@ -64,7 +99,7 @@
       </div>
 
       <div class="start-panel">
-        <div class="start-record"><span>TODAY · THIS DEVICE</span><strong id="introBest">0</strong><small>현재 시즌 최고 기록</small></div>
+        <div class="start-record"><span>THIS DEVICE</span><strong id="introBest">0</strong><small>현재 시즌 최고 기록</small></div>
         <button id="startBtn" class="primary-btn" type="button"><span>PLAY RISE</span><small>로그인 없이 바로 시작</small></button>
       </div>
       <p class="brand-footnote">GOOD TASTE TAKES A MOMENT.</p>
@@ -72,23 +107,39 @@
 
     <section id="gameScreen" class="screen" aria-label="CAFFIEND RISE 게임">
       <div class="experience-line"><span>CAFFIEND MOMENTS</span><strong id="brandLine">좋은 기다림에는 자신만의 리듬이 있습니다.</strong></div>
-      <div class="game-topline"><div><span id="gameSeason">AUTUMN</span><small id="gameMode">RHYTHM MODE</small></div><div class="phase-pill" id="phasePill">EASY</div><div class="timer-box"><small>TIME</small><strong id="timeValue">25.0</strong></div></div>
-      <div class="scoreboard"><div><small>SCORE</small><strong id="scoreValue">0</strong></div><div class="combo-block"><small>COMBO</small><strong id="comboValue">×0</strong></div><div class="align-right"><small>PERFECT</small><strong id="perfectValue">0</strong></div></div>
+      <div id="gameChallenge" class="game-challenge hidden"><span>CHALLENGE TARGET</span><strong id="gameChallengeTarget">0</strong></div>
+      <div class="game-topline">
+        <div><span id="gameSeason">AUTUMN</span><small id="gameMode">RHYTHM MODE</small></div>
+        <div class="phase-pill" id="phasePill">EASY</div>
+        <div class="timer-box"><small>TIME</small><strong id="timeValue">25.0</strong></div>
+      </div>
+      <div class="scoreboard">
+        <div><small>SCORE</small><strong id="scoreValue">0</strong></div>
+        <div class="combo-block"><small>COMBO</small><strong id="comboValue">×0</strong></div>
+        <div class="align-right"><small>PERFECT</small><strong id="perfectValue">0</strong></div>
+      </div>
       <div class="process-copy"><span id="processStep">01 / MERINGUE</span><p id="processLabel">머랭의 밀도를 고르게 맞추는 중</p></div>
 
       <button id="gameStage" class="game-stage" type="button" aria-label="수플레 타이밍 탭">
-        <div class="stage-grid" aria-hidden="true"></div><div class="stage-glow" aria-hidden="true"></div><div class="perfect-halo" aria-hidden="true"><span>PERFECT ZONE</span></div>
+        <div class="stage-grid" aria-hidden="true"></div><div class="stage-glow" aria-hidden="true"></div>
+        <div class="perfect-halo" aria-hidden="true"><span>PERFECT ZONE</span></div>
         <div id="souffle" class="souffle game-souffle" aria-hidden="true"><div class="souffle-top"></div><div class="season-garnish"></div><span id="fruitBonus" class="fruit-bonus"></span></div>
-        <div class="ramekin game-ramekin" aria-hidden="true"></div><div class="plate game-plate" aria-hidden="true"></div><div id="feedback" class="feedback" aria-hidden="true">PERFECT</div><div id="bonusToast" class="bonus-toast" aria-hidden="true">SEASON BONUS +300</div>
+        <div class="ramekin game-ramekin" aria-hidden="true"></div><div class="plate game-plate" aria-hidden="true"></div>
+        <div id="feedback" class="feedback" aria-hidden="true">PERFECT</div><div id="bonusToast" class="bonus-toast" aria-hidden="true">SEASON BONUS +300</div>
       </button>
 
-      <div class="timing-meter" aria-hidden="true"><div class="meter-meta"><span>EARLY</span><strong id="meterMode">FLOW</strong><span>LATE</span></div><div class="meter-track"><div id="greatZone" class="great-zone"></div><div id="perfectZone" class="perfect-zone"></div><div id="meterNeedle" class="meter-needle"></div></div></div>
+      <div class="timing-meter" aria-hidden="true">
+        <div class="meter-meta"><span>EARLY</span><strong id="meterMode">FLOW</strong><span>LATE</span></div>
+        <div class="meter-track"><div id="greatZone" class="great-zone"></div><div id="perfectZone" class="perfect-zone"></div><div id="meterNeedle" class="meter-needle"></div></div>
+      </div>
       <button id="tapBtn" class="tap-btn" type="button"><span>TAP</span><small>가장 폭신한 순간</small></button>
       <div class="difficulty-strip" aria-hidden="true"><span class="active">01 EASY</span><span>02 FLOW</span><span>03 HARD</span><span>04 FINAL</span></div>
     </section>
 
     <section id="resultScreen" class="screen" aria-labelledby="resultTitle">
       <div class="result-heading"><span id="resultSeason">AUTUMN · RHYTHM MODE</span><h2 id="resultTitle">오늘의 폭신함이<br />완성됐어요.</h2><p>기다리는 순간이 하나의 기록이 되었습니다.</p></div>
+
+      <div id="challengeOutcome" class="challenge-outcome hidden"><span>FRIEND CHALLENGE</span><strong id="challengeOutcomeTitle">CHALLENGE CLEARED</strong><p id="challengeOutcomeCopy"></p></div>
 
       <div class="share-card" id="shareCard">
         <div class="share-card-top"><span>CAFFIEND MOMENTS</span><span id="shareSeason">AUTUMN RISE</span></div>
@@ -97,15 +148,36 @@
         <div class="share-card-bottom"><span id="resultDate">TODAY</span><strong>너는 몇 점?</strong></div>
       </div>
 
-      <div class="result-badge" id="resultBadge">폭신 연습생</div><p class="result-message" id="resultMessage">한 번만 더 하면 타이밍이 보일 거예요.</p>
+      <div class="result-badge" id="resultBadge">FIRST RISE</div><p class="result-message" id="resultMessage">한 번만 더 하면 타이밍이 보일 거예요.</p>
       <div class="result-metrics"><div><small>MAX COMBO</small><strong id="maxComboValue">0</strong></div><div><small>PERFECT RATE</small><strong id="perfectRateValue">0%</strong></div><div><small>BEST</small><strong id="bestScore">0</strong></div></div>
-      <div id="rewardNotice" class="reward-notice hidden"><div class="reward-mark">NEW</div><div><span>DAILY RECORD</span><strong>새로운 기록을 만들었어요.</strong><p>매장 운영 버전에서는 기록 갱신 보상과 연결됩니다.</p></div></div>
+
+      <section class="store-board result-board" aria-label="매장 기록 보드">
+        <div class="panel-title-row">
+          <div><span>TODAY AT CAFFIEND</span><strong>기록 보드</strong></div>
+          <span id="resultBoardStatus" class="status-chip"><i></i>LOCAL PREVIEW</span>
+        </div>
+        <div id="storeRanking" class="store-ranking"><p class="ranking-empty">기록을 불러오는 중입니다.</p></div>
+        <div class="rank-callout"><span>MY RANK</span><strong id="resultRank">—</strong><small id="rankGap">첫 기록이 기준이 됩니다.</small></div>
+      </section>
+
+      <div id="rewardNotice" class="reward-notice hidden">
+        <div class="reward-mark">NEW</div>
+        <div><span id="rewardEyebrow">RECORD MOMENT</span><strong id="rewardHeadline">오늘의 기록을 새로 썼어요.</strong><p id="rewardBody">매장 운영 버전에서는 실제 기록 검증 후 혜택과 연결됩니다.</p></div>
+      </div>
 
       <div id="tablePanel" class="table-panel hidden">
         <div class="panel-head"><div><span>TABLE CHALLENGE</span><strong>우리 테이블의 RISE MASTER</strong></div><span id="tableCount">1 PLAYER</span></div>
         <div id="tableRanking" class="table-ranking"></div>
         <button id="nextPlayerBtn" class="challenge-btn" type="button">다음 사람 도전</button>
       </div>
+
+      <section class="passport-card result-passport" aria-label="사계절 패스포트 결과">
+        <div class="panel-title-row"><div><span>FOUR SEASONS PASSPORT</span><strong id="resultPassportTitle">한 계절을 기록했어요.</strong></div><span id="resultPassportCount" class="passport-count">1 / 4</span></div>
+        <div class="passport-stamps" aria-hidden="true">
+          <span data-result-passport="spring">SP</span><span data-result-passport="summer">SU</span><span data-result-passport="autumn">AU</span><span data-result-passport="winter">WI</span>
+        </div>
+        <p id="resultPassportCopy">다음 계절의 RISE도 만나보세요.</p>
+      </section>
 
       <div class="season-product-card">
         <div class="season-product-visual"><span id="productSeason">SEASON 03</span><i></i></div>
@@ -124,6 +196,7 @@
   </main>
 
   <script src="./config.js"></script>
+  <script src="./experience.js"></script>
   <script src="./leaderboard.js"></script>
   <script src="./analytics.js"></script>
   <script src="./game.js"></script>
