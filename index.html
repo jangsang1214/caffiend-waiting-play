@@ -4,51 +4,48 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#f2eadc" />
-  <meta name="description" content="CAFFIEND RISE — 기다리는 시간을 카피엔드의 계절과 함께 플레이하세요." />
-  <title>CAFFIEND RISE — Seasonal Waiting Play</title>
+  <meta name="description" content="CAFFIEND MOMENTS — 기다리는 순간도, 카피엔드답게." />
+  <title>CAFFIEND MOMENTS — RISE</title>
   <link rel="stylesheet" href="./style.css" />
 </head>
 <body data-season="autumn">
   <main class="app" aria-live="polite">
     <header class="brand-bar">
-      <a class="brand-lockup" href="./" aria-label="CAFFIEND RISE 홈">
+      <a class="brand-lockup" href="./" aria-label="CAFFIEND MOMENTS 홈">
         <span class="brand-symbol">C</span>
-        <span class="brand-word">
-          <strong>CAFFIEND</strong>
-          <small>WAITING PLAY</small>
-        </span>
+        <span class="brand-word"><strong>CAFFIEND</strong><small>MOMENTS</small></span>
       </a>
-      <button id="soundBtn" class="utility-btn" type="button" aria-label="진동 피드백 켜기/끄기">
-        <span class="utility-dot"></span><span id="hapticText">HAPTIC ON</span>
-      </button>
+      <button id="soundBtn" class="utility-btn" type="button" aria-label="진동 피드백 켜기/끄기"><span class="utility-dot"></span><span id="hapticText">HAPTIC ON</span></button>
     </header>
 
     <section id="introScreen" class="screen active" aria-labelledby="introTitle">
-      <div class="intro-meta">
-        <span id="seasonIndex">SEASON 03</span>
-        <span class="meta-line"></span>
-        <span id="seasonLabel">AUTUMN · RHYTHM MODE</span>
-      </div>
+      <div class="campaign-kicker"><span id="seasonIndex">SEASON 03</span><i></i><span id="seasonLabel">AUTUMN · RHYTHM MODE</span></div>
 
       <div class="hero-copy">
-        <p class="kicker">맛있는 메뉴가 완성되는 동안</p>
-        <h1 id="introTitle">기다림을<br /><em>플레이하다.</em></h1>
-        <p class="subcopy">수플레가 가장 폭신해지는 순간을 TAP 하세요.<br />쉬워 보이지만, 높은 기록은 타이밍을 요구합니다.</p>
+        <p class="kicker">CAFFIEND WAITING EXPERIENCE</p>
+        <h1 id="introTitle">기다리는 순간도,<br /><em>카피엔드답게.</em></h1>
+        <p class="subcopy">오늘의 메뉴가 완성되는 동안, 수플레가 가장 폭신해지는 순간을 찾아보세요. 짧은 플레이가 기다림을 하나의 기억으로 바꿉니다.</p>
+      </div>
+
+      <div class="brand-promise">
+        <span>OUR MOMENT</span>
+        <p>맛있는 메뉴와 기분 좋은 기다림,<br />더 좋은 경험을 선물하는 공간.</p>
       </div>
 
       <div class="hero-object" aria-hidden="true">
-        <div class="hero-orbit orbit-one"></div>
-        <div class="hero-orbit orbit-two"></div>
-        <div class="hero-souffle-wrap">
-          <div class="souffle hero-souffle"><div class="souffle-top"></div><div class="season-garnish"></div></div>
-          <div class="ramekin hero-ramekin"></div>
-          <div class="plate hero-plate"></div>
-        </div>
-        <div class="hero-caption"><span>25 SEC</span><span>ONE TAP</span><span>SEASONAL</span></div>
+        <div class="hero-orbit orbit-one"></div><div class="hero-orbit orbit-two"></div>
+        <div class="hero-souffle-wrap"><div class="souffle hero-souffle"><div class="souffle-top"></div><div class="season-garnish"></div></div><div class="ramekin hero-ramekin"></div><div class="plate hero-plate"></div></div>
+        <div class="hero-caption"><span>25 SEC</span><span>ONE TAP</span><span>FOUR SEASONS</span></div>
+      </div>
+
+      <div class="season-campaign-card" id="seasonCampaignCard">
+        <div class="season-campaign-meta"><span id="seasonCampaign">SEASON 03</span><small id="seasonMode">RHYTHM MODE</small></div>
+        <strong id="seasonStoryHeadline">기다림에도 리듬이 있습니다</strong>
+        <p id="seasonStoryBody">카피엔드의 계절을 플레이로 먼저 만나보세요.</p>
       </div>
 
       <div class="season-picker-wrap">
-        <div class="section-label-row"><span>FOUR SEASONS</span><small>시즌을 선택해 미리 체험할 수 있어요</small></div>
+        <div class="section-label-row"><span>FOUR SEASONS</span><small>계절마다 다른 리듬과 난이도</small></div>
         <div class="season-picker" role="group" aria-label="계절 선택">
           <button class="season-option" data-season="spring" type="button"><span class="season-swatch"></span><strong>SPRING</strong><small>BLOOM</small></button>
           <button class="season-option" data-season="summer" type="button"><span class="season-swatch"></span><strong>SUMMER</strong><small>BRIGHT</small></button>
@@ -57,107 +54,78 @@
         </div>
       </div>
 
-      <div class="start-panel">
-        <div class="start-record">
-          <span>TODAY · THIS DEVICE</span>
-          <strong id="introBest">0</strong>
-          <small>현재 시즌 최고 기록</small>
+      <div class="play-mode-card">
+        <div class="section-label-row"><span>PLAY MODE</span><small>혼자 또는 함께</small></div>
+        <div class="mode-toggle" role="group" aria-label="플레이 모드">
+          <button class="mode-option active" data-mode="solo" type="button"><strong>SOLO</strong><small>내 기록에 도전</small></button>
+          <button class="mode-option" data-mode="table" type="button"><strong>TABLE CHALLENGE</strong><small>같이 온 사람과 대결</small></button>
         </div>
-        <button id="startBtn" class="primary-btn" type="button"><span>PLAY CAFFIEND RISE</span><small>로그인 없이 바로 시작</small></button>
+        <p id="modeDescription">한 번 더 할수록 좋은 순간이 보입니다.</p>
       </div>
+
+      <div class="start-panel">
+        <div class="start-record"><span>TODAY · THIS DEVICE</span><strong id="introBest">0</strong><small>현재 시즌 최고 기록</small></div>
+        <button id="startBtn" class="primary-btn" type="button"><span>PLAY RISE</span><small>로그인 없이 바로 시작</small></button>
+      </div>
+      <p class="brand-footnote">GOOD TASTE TAKES A MOMENT.</p>
     </section>
 
     <section id="gameScreen" class="screen" aria-label="CAFFIEND RISE 게임">
-      <div class="game-topline">
-        <div><span id="gameSeason">AUTUMN</span><small id="gameMode">RHYTHM MODE</small></div>
-        <div class="phase-pill" id="phasePill">EASY</div>
-        <div class="timer-box"><small>TIME</small><strong id="timeValue">25.0</strong></div>
-      </div>
-
-      <div class="scoreboard">
-        <div><small>SCORE</small><strong id="scoreValue">0</strong></div>
-        <div class="combo-block"><small>COMBO</small><strong id="comboValue">×0</strong></div>
-        <div class="align-right"><small>PERFECT</small><strong id="perfectValue">0</strong></div>
-      </div>
-
-      <div class="process-copy">
-        <span id="processStep">01 / MERINGUE</span>
-        <p id="processLabel">머랭의 밀도를 고르게 맞추는 중</p>
-      </div>
+      <div class="experience-line"><span>CAFFIEND MOMENTS</span><strong id="brandLine">좋은 기다림에는 자신만의 리듬이 있습니다.</strong></div>
+      <div class="game-topline"><div><span id="gameSeason">AUTUMN</span><small id="gameMode">RHYTHM MODE</small></div><div class="phase-pill" id="phasePill">EASY</div><div class="timer-box"><small>TIME</small><strong id="timeValue">25.0</strong></div></div>
+      <div class="scoreboard"><div><small>SCORE</small><strong id="scoreValue">0</strong></div><div class="combo-block"><small>COMBO</small><strong id="comboValue">×0</strong></div><div class="align-right"><small>PERFECT</small><strong id="perfectValue">0</strong></div></div>
+      <div class="process-copy"><span id="processStep">01 / MERINGUE</span><p id="processLabel">머랭의 밀도를 고르게 맞추는 중</p></div>
 
       <button id="gameStage" class="game-stage" type="button" aria-label="수플레 타이밍 탭">
-        <div class="stage-grid" aria-hidden="true"></div>
-        <div class="stage-glow" aria-hidden="true"></div>
-        <div class="perfect-halo" aria-hidden="true"><span>PERFECT ZONE</span></div>
-        <div id="souffle" class="souffle game-souffle" aria-hidden="true">
-          <div class="souffle-top"></div>
-          <div class="season-garnish"></div>
-          <span id="fruitBonus" class="fruit-bonus"></span>
-        </div>
-        <div class="ramekin game-ramekin" aria-hidden="true"></div>
-        <div class="plate game-plate" aria-hidden="true"></div>
-        <div id="feedback" class="feedback" aria-hidden="true">PERFECT</div>
-        <div id="bonusToast" class="bonus-toast" aria-hidden="true">SEASON BONUS +300</div>
+        <div class="stage-grid" aria-hidden="true"></div><div class="stage-glow" aria-hidden="true"></div><div class="perfect-halo" aria-hidden="true"><span>PERFECT ZONE</span></div>
+        <div id="souffle" class="souffle game-souffle" aria-hidden="true"><div class="souffle-top"></div><div class="season-garnish"></div><span id="fruitBonus" class="fruit-bonus"></span></div>
+        <div class="ramekin game-ramekin" aria-hidden="true"></div><div class="plate game-plate" aria-hidden="true"></div><div id="feedback" class="feedback" aria-hidden="true">PERFECT</div><div id="bonusToast" class="bonus-toast" aria-hidden="true">SEASON BONUS +300</div>
       </button>
 
-      <div class="timing-meter" aria-hidden="true">
-        <div class="meter-meta"><span>EARLY</span><strong id="meterMode">FLOW</strong><span>LATE</span></div>
-        <div class="meter-track">
-          <div id="greatZone" class="great-zone"></div>
-          <div id="perfectZone" class="perfect-zone"></div>
-          <div id="meterNeedle" class="meter-needle"></div>
-        </div>
-      </div>
-
-      <button id="tapBtn" class="tap-btn" type="button">
-        <span>TAP</span>
-        <small>가장 폭신한 순간</small>
-      </button>
-
-      <div class="difficulty-strip" aria-hidden="true">
-        <span class="active">01 EASY</span><span>02 FLOW</span><span>03 HARD</span><span>04 FINAL</span>
-      </div>
+      <div class="timing-meter" aria-hidden="true"><div class="meter-meta"><span>EARLY</span><strong id="meterMode">FLOW</strong><span>LATE</span></div><div class="meter-track"><div id="greatZone" class="great-zone"></div><div id="perfectZone" class="perfect-zone"></div><div id="meterNeedle" class="meter-needle"></div></div></div>
+      <button id="tapBtn" class="tap-btn" type="button"><span>TAP</span><small>가장 폭신한 순간</small></button>
+      <div class="difficulty-strip" aria-hidden="true"><span class="active">01 EASY</span><span>02 FLOW</span><span>03 HARD</span><span>04 FINAL</span></div>
     </section>
 
     <section id="resultScreen" class="screen" aria-labelledby="resultTitle">
-      <div class="result-heading">
-        <span id="resultSeason">AUTUMN · RHYTHM MODE</span>
-        <h2 id="resultTitle">오늘의 폭신함이<br />완성됐어요.</h2>
+      <div class="result-heading"><span id="resultSeason">AUTUMN · RHYTHM MODE</span><h2 id="resultTitle">오늘의 폭신함이<br />완성됐어요.</h2><p>기다리는 순간이 하나의 기록이 되었습니다.</p></div>
+
+      <div class="share-card" id="shareCard">
+        <div class="share-card-top"><span>CAFFIEND MOMENTS</span><span id="shareSeason">AUTUMN RISE</span></div>
+        <div class="share-score"><small>MY RISE</small><strong id="finalScore">0</strong><span>POINTS</span></div>
+        <div class="share-copy" id="shareCopy">기다리는 순간도, 카피엔드답게.</div>
+        <div class="share-card-bottom"><span id="resultDate">TODAY</span><strong>너는 몇 점?</strong></div>
       </div>
 
-      <div class="result-card">
-        <div class="result-card-top"><span id="recordStatus">YOUR SCORE</span><span id="resultDate">TODAY</span></div>
-        <div class="result-score"><strong id="finalScore">0</strong><small>POINTS</small></div>
-        <div class="result-badge" id="resultBadge">폭신 연습생</div>
-        <p id="resultMessage">한 번만 더 하면 타이밍이 보일 거예요.</p>
-        <div class="result-metrics">
-          <div><small>MAX COMBO</small><strong id="maxComboValue">0</strong></div>
-          <div><small>PERFECT RATE</small><strong id="perfectRateValue">0%</strong></div>
-          <div><small>BEST</small><strong id="bestScore">0</strong></div>
-        </div>
+      <div class="result-badge" id="resultBadge">폭신 연습생</div><p class="result-message" id="resultMessage">한 번만 더 하면 타이밍이 보일 거예요.</p>
+      <div class="result-metrics"><div><small>MAX COMBO</small><strong id="maxComboValue">0</strong></div><div><small>PERFECT RATE</small><strong id="perfectRateValue">0%</strong></div><div><small>BEST</small><strong id="bestScore">0</strong></div></div>
+      <div id="rewardNotice" class="reward-notice hidden"><div class="reward-mark">NEW</div><div><span>DAILY RECORD</span><strong>새로운 기록을 만들었어요.</strong><p>매장 운영 버전에서는 기록 갱신 보상과 연결됩니다.</p></div></div>
+
+      <div id="tablePanel" class="table-panel hidden">
+        <div class="panel-head"><div><span>TABLE CHALLENGE</span><strong>우리 테이블의 RISE MASTER</strong></div><span id="tableCount">1 PLAYER</span></div>
+        <div id="tableRanking" class="table-ranking"></div>
+        <button id="nextPlayerBtn" class="challenge-btn" type="button">다음 사람 도전</button>
       </div>
 
-      <div id="rewardNotice" class="reward-notice hidden">
-        <div class="reward-mark">NEW</div>
-        <div><span>DAILY RECORD</span><strong>새로운 기록을 만들었어요.</strong><p>매장 운영 버전에서는 기록 갱신 보상과 연결됩니다.</p></div>
+      <div class="season-product-card">
+        <div class="season-product-visual"><span id="productSeason">SEASON 03</span><i></i></div>
+        <div class="season-product-copy"><span id="productLabel">TODAY'S SEASONAL DESSERT</span><strong id="productName">오늘의 가을 제철 디저트</strong><p id="productCopy">매장에서 오늘 준비된 제철 메뉴를 확인해보세요.</p></div>
+        <button id="seasonCta" class="text-cta" type="button">이번 시즌 경험 보기 <span>↗</span></button>
       </div>
 
-      <div class="taste-guide">
-        <div class="guide-index">CAFFIEND 01</div>
-        <div><span>HOW TO ENJOY</span><strong id="tasteTip">먼저 수플레의 결을 맛본 뒤, 제철 토핑과 함께 두 번째 한입을 즐겨보세요.</strong></div>
-      </div>
+      <div id="seasonStoryPanel" class="season-story-panel hidden"><span>CAFFIEND SEASON STORY</span><strong id="storyPanelTitle">기다림에도 리듬이 있습니다</strong><p id="storyPanelBody">카피엔드의 계절을 플레이로 먼저 만나보세요.</p><div class="taste-guide"><div class="guide-index">HOW TO ENJOY</div><strong id="tasteTip">먼저 수플레의 결을 맛본 뒤, 오늘의 제철 토핑과 함께 두 번째 한입을 즐겨보세요.</strong></div></div>
 
       <div class="result-actions">
         <button id="retryBtn" class="primary-btn" type="button"><span>한 번 더 도전</span><small>기록을 다시 올려보세요</small></button>
-        <button id="shareBtn" class="secondary-btn" type="button">기록 공유하기</button>
+        <div class="split-actions"><button id="challengeShareBtn" class="secondary-btn" type="button">친구에게 도전 보내기</button><button id="shareBtn" class="secondary-btn" type="button">결과 카드 공유</button></div>
       </div>
-
       <p class="closing-copy"><span>WAITING TIME → BRAND TIME</span>당신의 메뉴도 정성껏 준비되고 있어요.</p>
     </section>
   </main>
 
   <script src="./config.js"></script>
   <script src="./leaderboard.js"></script>
+  <script src="./analytics.js"></script>
   <script src="./game.js"></script>
 </body>
 </html>
