@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#f5efe4" />
+  <meta name="description" content="CAFFIEND RISE — 기다리는 시간을 카피엔드다운 작은 즐거움으로." />
+  <title>CAFFIEND RISE</title>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <main class="app" aria-live="polite">
+    <header class="brand-bar">
+      <div class="brand-mark" aria-label="CAFFIEND">C</div>
+      <div>
+        <p class="eyebrow">CAFFIEND WAITING PLAY</p>
+        <h1>CAFFIEND RISE</h1>
+      </div>
+      <button id="soundBtn" class="icon-btn" type="button" aria-label="진동 피드백 켜기/끄기">◌</button>
+    </header>
+
+    <section id="introScreen" class="screen active">
+      <div class="season-pill"><span id="seasonEmoji">🍇</span><span id="seasonLabel">AUTUMN SEASON</span></div>
+      <div class="hero-copy">
+        <p class="kicker">맛있는 메뉴가 완성되는 동안</p>
+        <h2>가장 <em>폭신한 순간</em>을<br />TAP 해주세요.</h2>
+        <p class="subcopy">설명은 한 줄이면 충분해요.<br />부풀어 오르는 수플레의 완벽한 순간을 맞춰보세요.</p>
+      </div>
+
+      <div class="mini-preview" aria-hidden="true">
+        <div class="plate preview-plate"></div>
+        <div class="souffle preview-souffle"><span class="fruit">●</span></div>
+        <div class="steam steam-a">~</div>
+        <div class="steam steam-b">~</div>
+      </div>
+
+      <div class="intro-stats">
+        <div><span>PLAY</span><strong>25초</strong></div>
+        <div><span>CONTROL</span><strong>한 손 TAP</strong></div>
+        <div><span>REWARD</span><strong>기록 도전</strong></div>
+      </div>
+
+      <button id="startBtn" class="primary-btn" type="button">수플레 부풀리기</button>
+      <p class="microcopy">앱 설치 · 로그인 없이 바로 시작</p>
+    </section>
+
+    <section id="gameScreen" class="screen">
+      <div class="hud">
+        <div class="hud-item"><span>TIME</span><strong id="timeValue">25.0</strong></div>
+        <div class="hud-center">
+          <span>COMBO</span><strong id="comboValue">×0</strong>
+        </div>
+        <div class="hud-item align-right"><span>SCORE</span><strong id="scoreValue">0</strong></div>
+      </div>
+
+      <div class="game-copy">
+        <p id="processLabel">머랭의 공기를 살려 천천히 올리는 중</p>
+        <p class="process-step"><span id="stepDot1" class="dot active"></span><span id="stepDot2" class="dot"></span><span id="stepDot3" class="dot"></span></p>
+      </div>
+
+      <div id="gameStage" class="game-stage">
+        <div class="target-ring" aria-hidden="true">
+          <span>PERFECT</span>
+        </div>
+        <div class="oven-glow"></div>
+        <div id="souffle" class="souffle game-souffle">
+          <div class="souffle-top"></div>
+          <span id="fruitBonus" class="fruit-bonus" aria-hidden="true"></span>
+        </div>
+        <div class="ramekin"></div>
+        <div class="plate"></div>
+        <div id="feedback" class="feedback">폭신!</div>
+      </div>
+
+      <div class="rise-meter" aria-hidden="true">
+        <div class="meter-labels"><span>조금 더</span><span>PERFECT</span><span>넘치기 전</span></div>
+        <div class="meter-track">
+          <div class="perfect-zone"></div>
+          <div id="meterNeedle" class="meter-needle"></div>
+        </div>
+      </div>
+
+      <button id="tapBtn" class="tap-btn" type="button">
+        <span>TAP</span>
+        <small>가장 폭신한 순간</small>
+      </button>
+      <p class="game-tip">PERFECT를 연속으로 맞추면 콤보가 올라가요.</p>
+    </section>
+
+    <section id="resultScreen" class="screen">
+      <p class="eyebrow">YOUR CAFFIEND MOMENT</p>
+      <h2 id="resultTitle">오늘의 수플레가 완성됐어요.</h2>
+
+      <div class="result-card">
+        <div class="result-season"><span id="resultEmoji">🍇</span><span id="resultSeason">AUTUMN</span></div>
+        <div class="result-score"><span>SCORE</span><strong id="finalScore">0</strong></div>
+        <div class="result-badge" id="resultBadge">폭신 연습생</div>
+        <p id="resultMessage">조금만 더 기다리면, 실제 디저트도 정성껏 완성돼요.</p>
+      </div>
+
+      <div id="recordBox" class="record-box">
+        <div>
+          <span>MVP · 이 기기 최고 기록</span>
+          <strong id="bestScore">0</strong>
+        </div>
+        <span id="recordStatus" class="record-status">기록 도전 중</span>
+      </div>
+
+      <div id="rewardNotice" class="reward-notice hidden">
+        <span>NEW RECORD</span>
+        <strong>새로운 최고 기록!</strong>
+        <p>실제 운영 시 매장 기준 기록 갱신 보상과 연결할 수 있어요.</p>
+      </div>
+
+      <div class="result-actions">
+        <button id="retryBtn" class="primary-btn" type="button">한 번 더 도전</button>
+        <button id="shareBtn" class="secondary-btn" type="button">기록 공유하기</button>
+      </div>
+
+      <div class="brand-message">
+        <p>게임 속 수플레는 완성.</p>
+        <strong>당신의 메뉴도 정성껏 준비되고 있어요.</strong>
+      </div>
+    </section>
+  </main>
+
+  <script src="./game.js"></script>
+</body>
+</html>
