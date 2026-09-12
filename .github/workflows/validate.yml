@@ -1,0 +1,27 @@
+name: Validate CAFFIEND MOMENTS
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  syntax:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Check JavaScript syntax
+        run: |
+          node --check config.js
+          node --check experience.js
+          node --check leaderboard.js
+          node --check analytics.js
+          node --check game.js
+      - name: Check required static files
+        run: |
+          test -f index.html
+          test -f style.css
+          test -f README.md
