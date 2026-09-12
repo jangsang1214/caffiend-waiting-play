@@ -4,7 +4,7 @@
   const PREFIX = "caffiend-rise";
   const TABLE_KEY = `${PREFIX}:table-session`;
 
-  const todayKey = () => new Date().toISOString().slice(0, 10);
+  const todayKey = () => new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
   const seasonKey = (seasonId) => `${PREFIX}:best:${todayKey()}:${seasonId}`;
   const allTimeKey = (seasonId) => `${PREFIX}:alltime:${seasonId}`;
   const historyKey = (seasonId) => `${PREFIX}:history:${todayKey()}:${seasonId}`;
