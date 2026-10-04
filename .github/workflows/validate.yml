@@ -20,6 +20,7 @@ jobs:
           node --check leaderboard.js
           node --check analytics.js
           node --check dessert-art.js
+          node --check sprite-renderer.js
           node --check game.js
           node --check side-games.js
       - name: Check required files
@@ -28,6 +29,7 @@ jobs:
           test -f style.css
           test -f README.md
           test -f dessert-art.js
+          test -f sprite-renderer.js
           test -f assets/menu/menu-atlas-v2.webp
           test -f side-games.js
           test -f assets/menu/README.md
