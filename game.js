@@ -101,7 +101,6 @@
   function menuThumb(target, level, size = 48) {
     const menu = menus[level];
     target.innerHTML = "";
-    target.className = target.className.includes("mini-dessert") ? "mini-dessert" : "next-preview";
     target.style.width = `${size}px`;
     target.style.height = `${size}px`;
     const img = document.createElement("img");
@@ -241,7 +240,7 @@
   }
 
   function updateNextPreview() {
-    menuThumb(els.nextPreview, state.nextLevel, 48);
+    menuThumb(els.nextPreview, state.nextLevel, 62);
   }
 
   function updateRankUi(snapshot = state.lastLeaderboard) {
