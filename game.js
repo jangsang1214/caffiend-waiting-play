@@ -89,7 +89,7 @@
   function loadAssets() {
     if (!ART) return;
     menus.forEach((menu, index) => {
-      menu.image = ART.render(index, 256);
+      menu.image = ART.render(index, 320);
       menu.imageFailed = false;
     });
   }
