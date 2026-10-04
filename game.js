@@ -56,6 +56,7 @@
     weekLabelEntry:$("weekLabelEntry"), nicknameButton:$("nicknameButton"), nicknameDisplay:$("nicknameDisplay"),
     pauseButton:$("pauseButton"), score:$("scoreValue"), personalBest:$("personalBestValue"),
     nextPreview:$("nextPreview"), recipeButtonPreview:$("recipeButtonPreview"), canvas:$("gameCanvas"), boardWrap:document.querySelector(".board-wrap"),
+    spriteLayer:$("spriteLayer"), dropSprite:$("dropSprite"),
     dropGuide:$("dropGuide"), connectionPill:$("connectionPill"), connectionText:$("connectionText"),
     myRank:$("myRankValue"), weekLabel:$("weekLabel"), topScore:$("topScoreValue"),
     recipeButton:$("recipeButton"), rankingButton:$("rankingButton"),
@@ -170,6 +171,13 @@
     els.canvas.style.margin = "0 auto";
     els.canvas.width = Math.max(1, Math.floor(cssW * dpr));
     els.canvas.height = Math.max(1, Math.floor(cssH * dpr));
+
+    const offsetX = Math.max(0, (rect.width - cssW) / 2);
+    els.spriteLayer.style.left = `${offsetX}px`;
+    els.spriteLayer.style.width = `${W}px`;
+    els.spriteLayer.style.height = `${H}px`;
+    els.spriteLayer.style.transform = `scale(${renderScale})`;
+    syncSprites();
   }
 
   window.addEventListener("resize", resizeCanvas);
@@ -182,6 +190,20 @@
     return body.plugin && Number.isInteger(body.plugin.level);
   }
 
+  function visualSize(level) {
+    const menu = menus[level];
+    return menu.radius * (3.62 + Math.min(level, 10) * 0.065);
+  }
+
+  function createSpriteElement(level, size, className) {
+    const el = document.createElement("div");
+    el.className = className;
+    el.style.width = `${size}px`;
+    el.style.height = `${size}px`;
+    SPRITES.mount(el, level, Math.round(size));
+    return el;
+  }
+
   function createBody(level, x, y) {
     const menu = menus[level];
     const body = Bodies.circle(x, y, menu.radius, {
@@ -191,20 +213,72 @@
       density:CONFIG.physics.density,
       label:`menu-${level + 1}`
     });
+    const size = visualSize(level);
+    const spriteEl = createSpriteElement(level, size, "physics-dessert");
+    els.spriteLayer.appendChild(spriteEl);
     body.plugin = {
       level,
       bornAt:performance.now(),
       merging:false,
-      bodyId:crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`
+      bodyId:crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`,
+      spriteEl,
+      visualSize:size
     };
     Composite.add(world, body);
+    syncBodySprite(body);
     return body;
   }
 
+  function removeBodySprite(body) {
+    body?.plugin?.spriteEl?.remove?.();
+    if (body?.plugin) body.plugin.spriteEl = null;
+  }
+
   function clearItems() {
-    Composite.allBodies(world).filter(isItem).forEach(body => Composite.remove(world, body));
+    Composite.allBodies(world).filter(isItem).forEach(body => {
+      removeBodySprite(body);
+      Composite.remove(world, body);
+    });
+    els.spriteLayer.innerHTML = "";
     mergeQueue.length = 0;
     fx.length = 0;
+  }
+
+  function syncBodySprite(body) {
+    if (!isItem(body) || !body.plugin.spriteEl) return;
+    const size = body.plugin.visualSize || visualSize(body.plugin.level);
+    body.plugin.spriteEl.style.transform =
+      `translate3d(${body.position.x - size / 2}px,${body.position.y - size / 2}px,0) rotate(${body.angle}rad)`;
+  }
+
+  function mountDropSprite() {
+    const level = state.currentLevel;
+    const size = visualSize(level);
+    els.dropSprite.innerHTML = "";
+    els.dropSprite.style.width = `${size}px`;
+    els.dropSprite.style.height = `${size}px`;
+    SPRITES.mount(els.dropSprite, level, Math.round(size));
+    syncDropSprite();
+  }
+
+  function syncDropSprite() {
+    if (!els.dropSprite) return;
+    if (!state.gameStarted || state.gameOver || !state.canDrop) {
+      els.dropSprite.classList.remove("is-visible");
+      return;
+    }
+    const size = visualSize(state.currentLevel);
+    const x = clampDropX(state.dropX);
+    els.dropSprite.style.transform =
+      `translate3d(${x - size / 2}px,${CONFIG.physics.dropY - size / 2}px,0)`;
+    els.dropSprite.classList.add("is-visible");
+  }
+
+  function syncSprites() {
+    for (const body of Composite.allBodies(world)) {
+      if (isItem(body)) syncBodySprite(body);
+    }
+    syncDropSprite();
   }
 
   function clampDropX(x) {
@@ -376,6 +450,7 @@
     updateNextPreview();
     menuThumb(els.recipeButtonPreview, 0, 48);
     renderRecipe();
+    mountDropSprite();
     lastFrame = performance.now();
     drawBoard(lastFrame);
     track("game_start");
@@ -398,11 +473,15 @@
     state.nextLevel = randomDropLevel();
     updateNextPreview();
     state.canDrop = false;
+    mountDropSprite();
     if (state.firstDrop) {
       state.firstDrop = false;
       els.dropGuide.style.opacity = "0";
     }
-    setTimeout(() => { state.canDrop = true; }, CONFIG.physics.dropCooldownMs);
+    setTimeout(() => {
+      state.canDrop = true;
+      mountDropSprite();
+    }, CONFIG.physics.dropCooldownMs);
   }
 
   function onCollision(event) {
@@ -437,6 +516,8 @@
         y:(a.velocity.y + b.velocity.y) / 2
       };
 
+      removeBodySprite(a);
+      removeBodySprite(b);
       Composite.remove(world, a);
       Composite.remove(world, b);
 
@@ -569,12 +650,10 @@
       ctx.lineTo(x, H - 15);
       ctx.stroke();
       ctx.restore();
-      if (state.canDrop) drawMenu(state.currentLevel, x, CONFIG.physics.dropY);
+      // Dessert sprites are rendered in the DOM layer above this canvas.
     }
 
-    for (const body of Composite.allBodies(world)) {
-      if (isItem(body)) drawMenu(body.plugin.level, body.position.x, body.position.y, body.angle);
-    }
+    syncSprites();
 
     for (let i = fx.length - 1; i >= 0; i--) {
       const item = fx[i];
@@ -768,6 +847,11 @@
         height:els.canvas.height,
         cssWidth:els.canvas.getBoundingClientRect().width,
         cssHeight:els.canvas.getBoundingClientRect().height
+      },
+      domSprites:{
+        physics:els.spriteLayer.querySelectorAll(".physics-dessert").length,
+        dropVisible:els.dropSprite.classList.contains("is-visible"),
+        dropChildren:els.dropSprite.childElementCount
       },
       gameStarted:state.gameStarted,
       bodies:Composite.allBodies(world).filter(isItem).length,
