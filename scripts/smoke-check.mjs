@@ -32,7 +32,7 @@ const sandbox = { window: {} };
 vm.runInNewContext(configSource, sandbox);
 const config = sandbox.window.DIGUL_CONFIG;
 if (!config) throw new Error("DIGUL_CONFIG not found");
-if (config.version !== "1.4.0") throw new Error("Unexpected UI version");
+if (config.version !== "1.4.1") throw new Error("Unexpected UI version");
 if (!Array.isArray(config.menus) || config.menus.length !== 11) throw new Error("Exactly 11 menu stages are required");
 
 config.menus.forEach((menu, index) => {
