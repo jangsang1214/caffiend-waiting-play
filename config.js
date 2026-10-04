@@ -7,7 +7,7 @@ window.DIGUL_CONFIG = {
     period: "weekly",
     weekStartsOn: 1,
     label: "이번 주",
-    refreshMs: 5000,
+    refreshMs: 2000,
     eventFlushMs: 1000
   },
   store: {
