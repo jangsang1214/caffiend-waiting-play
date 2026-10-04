@@ -218,7 +218,7 @@
   }
 
   function updateNextPreview() {
-    menuThumb(els.nextPreview, state.nextLevel, 62);
+    menuThumb(els.nextPreview, state.nextLevel, 70);
   }
 
   function updateRankUi(snapshot = state.lastLeaderboard) {
@@ -585,9 +585,27 @@
       }
       ctx.save();
       ctx.globalAlpha = 1 - t;
+      const pulse = 18 + t * 24;
+      ctx.strokeStyle = "rgba(245,183,52,.9)";
+      ctx.lineWidth = Math.max(1, 3 - t * 2);
+      ctx.beginPath();
+      ctx.arc(item.x, item.y, pulse, 0, Math.PI * 2);
+      ctx.stroke();
+
+      for (let s = 0; s < 6; s++) {
+        const a = s * Math.PI / 3 + t * .7;
+        const rr = 16 + t * 32;
+        ctx.fillStyle = s % 2 ? "#fff1a6" : "#f4aa31";
+        ctx.beginPath();
+        ctx.arc(item.x + Math.cos(a) * rr, item.y + Math.sin(a) * rr, 2.6 * (1 - t * .55), 0, Math.PI * 2);
+        ctx.fill();
+      }
+
       ctx.fillStyle = "#d9781e";
-      ctx.font = "800 18px system-ui";
+      ctx.font = "900 18px system-ui";
       ctx.textAlign = "center";
+      ctx.shadowColor = "rgba(255,255,255,.9)";
+      ctx.shadowBlur = 5;
       ctx.fillText(`+${item.points}`, item.x, item.y - 10 - t * 28);
       ctx.restore();
     }
