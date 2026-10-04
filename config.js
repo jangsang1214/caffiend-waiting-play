@@ -1,5 +1,5 @@
 window.DIGUL_CONFIG = {
-  version: "1.2.0",
+  version: "1.2.1",
   gameName: "디굴디굴",
   subtitle: "디저트가 데굴데굴",
   timezone: "Asia/Seoul",
@@ -12,7 +12,7 @@ window.DIGUL_CONFIG = {
   },
   store: {
     id: "caffiend-yangdeok",
-    leaderboardApi: "",
+    leaderboardApi: "https://pygyhbtipxhpuypjofqe.supabase.co/functions/v1/digul-api",
     requestTimeoutMs: 3500
   },
   nickname: {
@@ -29,7 +29,7 @@ window.DIGUL_CONFIG = {
     freshBodyGraceMs: 1200,
     dropCooldownMs: 500,
     gravity: 1.08,
-    baseRadius: 13,
+    baseRadius: 14.5,
     restitution: 0.11,
     friction: 0.26,
     frictionStatic: 0.52,
