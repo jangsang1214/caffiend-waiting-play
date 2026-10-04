@@ -1,232 +1,226 @@
 (() => {
-  const CONFIG = window.CAFFIEND_CONFIG;
-  const EXPERIENCE = window.CaffiendExperience;
-  const PREFIX = "caffiend-rise";
-  const TABLE_KEY = `${PREFIX}:table-session`;
+  const CONFIG = window.DIGUL_CONFIG;
+  const EXP = window.DigulExperience;
+  const PREFIX = "diguldigul";
 
-  const todayKey = () => new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
-  const seasonKey = (seasonId) => `${PREFIX}:best:${todayKey()}:${seasonId}`;
-  const allTimeKey = (seasonId) => `${PREFIX}:alltime:${seasonId}`;
-  const historyKey = (seasonId) => `${PREFIX}:history:${todayKey()}:${seasonId}`;
-  const rewardKey = (seasonId) => `${PREFIX}:reward:${todayKey()}:${seasonId}`;
+  const timeoutMs = () => CONFIG.store.requestTimeoutMs || 3500;
+  const apiBase = () => String(CONFIG.store.leaderboardApi || "").trim().replace(/\/$/, "");
+  const weeklyKey = () => EXP.getWeekKey();
+  const bestKey = () => `${PREFIX}:best:${weeklyKey()}:${EXP.getPlayerId()}`;
+  const reachedKey = () => `${PREFIX}:reached:${weeklyKey()}:${EXP.getPlayerId()}`;
 
-  const safeNumber = (value) => {
-    const parsed = Number(value || 0);
-    return Number.isFinite(parsed) ? parsed : 0;
-  };
-
+  const safeNumber = v => Number.isFinite(Number(v)) ? Number(v) : 0;
   const safeJson = (raw, fallback) => {
     try { return JSON.parse(raw) ?? fallback; } catch (_) { return fallback; }
   };
 
-  function readHistory(seasonId) {
-    const list = safeJson(localStorage.getItem(historyKey(seasonId)), []);
-    return Array.isArray(list) ? list : [];
-  }
-
-  function writeHistory(seasonId, entry) {
-    const next = [entry, ...readHistory(seasonId)].slice(0, 30);
-    localStorage.setItem(historyKey(seasonId), JSON.stringify(next));
-    return next;
-  }
-
-  function localTop(seasonId) {
-    const history = readHistory(seasonId)
-      .filter((item) => Number.isFinite(Number(item?.score)))
-      .sort((a, b) => Number(b.score) - Number(a.score))
-      .slice(0, 5);
-    return history.map((item, index) => ({
-      rank: index + 1,
-      score: Number(item.score),
-      label: index === 0 ? "BEST ON THIS DEVICE" : `PLAY ${index + 1}`,
-      mine: true
-    }));
-  }
-
-  function readTable() {
-    const parsed = safeJson(sessionStorage.getItem(TABLE_KEY), null);
-    if (!parsed || parsed.date !== todayKey()) return { date: todayKey(), scores: [] };
-    return parsed;
-  }
-
-  function writeTable(table) {
-    sessionStorage.setItem(TABLE_KEY, JSON.stringify(table));
-  }
-
-  function getApiBase() {
-    return String(CONFIG?.store?.leaderboardApi || "").trim().replace(/\/$/, "");
-  }
-
-  async function remoteRequest(path, options = {}) {
-    const base = getApiBase();
+  async function request(path, options = {}) {
+    const base = apiBase();
     if (!base) throw new Error("REMOTE_DISABLED");
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), CONFIG?.store?.timeoutMs || 3500);
+    const timer = setTimeout(() => controller.abort(), timeoutMs());
     try {
       const response = await fetch(`${base}${path}`, {
         ...options,
         signal: controller.signal,
-        headers: { "Content-Type": "application/json", ...(options.headers || {}) }
+        headers: { "Content-Type":"application/json", ...(options.headers || {}) }
       });
-      if (!response.ok) throw new Error(`REMOTE_${response.status}`);
+      if (!response.ok) throw new Error(`HTTP_${response.status}`);
       return await response.json();
     } finally {
-      clearTimeout(timeout);
+      clearTimeout(timer);
     }
   }
 
-  function normalizeTop(top = []) {
-    if (!Array.isArray(top)) return [];
-    return top.slice(0, 10).map((item, index) => ({
-      rank: Number(item.rank || index + 1),
-      score: safeNumber(item.score),
-      label: String(item.label || item.nickname || `PLAYER ${index + 1}`).slice(0, 24),
-      mine: Boolean(item.mine)
+  function normalizeRows(rows = []) {
+    if (!Array.isArray(rows)) return [];
+    return rows.slice(0, 50).map((row, index) => ({
+      rank: safeNumber(row.rank || index + 1),
+      playerId: String(row.playerId || row.player_id || ""),
+      nickname: String(row.nickname || "PLAYER").slice(0, 10),
+      score: safeNumber(row.score),
+      mine: Boolean(row.mine)
     }));
   }
 
-  async function getSnapshot(seasonId) {
-    const localDaily = safeNumber(localStorage.getItem(seasonKey(seasonId)));
-    const localAllTime = safeNumber(localStorage.getItem(allTimeKey(seasonId)));
-    if (getApiBase()) {
-      try {
-        const params = new URLSearchParams({
-          storeId: CONFIG.store.id,
-          seasonId,
-          date: todayKey(),
-          limit: "5",
-          deviceId: EXPERIENCE?.getDeviceId?.() || ""
-        });
-        const data = await remoteRequest(`/leaderboard?${params.toString()}`);
-        return {
-          dailyBest: safeNumber(data.dailyBest),
-          allTimeBest: safeNumber(data.allTimeBest),
-          rank: data.rank ? Number(data.rank) : null,
-          top: normalizeTop(data.top),
-          source: "store-live",
-          connected: true,
-          localDaily,
-          localAllTime
-        };
-      } catch (error) {
-        console.debug("Store leaderboard unavailable; using preview mode", error);
-      }
+  function getLocalBest() {
+    return safeNumber(localStorage.getItem(bestKey()));
+  }
+
+  function setLocalBest(score) {
+    const before = getLocalBest();
+    const next = Math.max(before, safeNumber(score));
+    if (next > before) {
+      localStorage.setItem(bestKey(), String(next));
+      localStorage.setItem(reachedKey(), String(Date.now()));
     }
+    return { before, best:next, improved:next > before };
+  }
+
+  function localSnapshot() {
+    const score = getLocalBest();
+    const nickname = EXP.getNickname() || "나";
     return {
-      dailyBest: localDaily,
-      allTimeBest: localAllTime,
-      rank: localDaily > 0 ? 1 : null,
-      top: localTop(seasonId),
-      source: "local-preview",
-      connected: false,
-      localDaily,
-      localAllTime
+      connected:false,
+      source:"local-preview",
+      weekKey:weeklyKey(),
+      weekLabel:EXP.getWeekLabel(),
+      myRank: score > 0 ? 1 : null,
+      myBest:score,
+      topScore:score,
+      rows: score > 0 ? [{
+        rank:1,
+        playerId:EXP.getPlayerId(),
+        nickname,
+        score,
+        mine:true
+      }] : []
     };
   }
 
-  async function submitScore({ seasonId, score, metrics = {}, playId = "" }) {
-    const numericScore = Math.max(0, Math.round(Number(score || 0)));
-    const dailyBefore = safeNumber(localStorage.getItem(seasonKey(seasonId)));
-    const allTimeBefore = safeNumber(localStorage.getItem(allTimeKey(seasonId)));
-    const localDailyRecord = numericScore > dailyBefore;
-    const localAllTimeRecord = numericScore > allTimeBefore;
-
-    if (localDailyRecord) localStorage.setItem(seasonKey(seasonId), String(numericScore));
-    if (localAllTimeRecord) localStorage.setItem(allTimeKey(seasonId), String(numericScore));
-    writeHistory(seasonId, { score: numericScore, at: Date.now(), playId });
-
-    if (getApiBase()) {
-      try {
-        const data = await remoteRequest("/scores", {
-          method: "POST",
-          body: JSON.stringify({
-            storeId: CONFIG.store.id,
-            seasonId,
-            score: numericScore,
-            date: todayKey(),
-            playId,
-            deviceId: EXPERIENCE?.getDeviceId?.() || "",
-            sessionId: EXPERIENCE?.getSessionId?.() || "",
-            attribution: EXPERIENCE?.getAttribution?.() || {},
-            metrics
-          })
-        });
-        return {
-          dailyBefore: safeNumber(data.dailyBefore),
-          dailyBest: safeNumber(data.dailyBest),
-          allTimeBest: safeNumber(data.allTimeBest),
-          rank: data.rank ? Number(data.rank) : null,
-          top: normalizeTop(data.top),
-          isDailyRecord: Boolean(data.isDailyRecord),
-          isAllTimeRecord: Boolean(data.isAllTimeRecord),
-          reward: data.reward || null,
-          source: "store-live",
-          connected: true
-        };
-      } catch (error) {
-        console.debug("Store score submit unavailable; saved locally", error);
-      }
+  async function getLeaderboard() {
+    if (!apiBase()) return localSnapshot();
+    try {
+      const q = new URLSearchParams({
+        storeId:CONFIG.store.id,
+        weekKey:weeklyKey(),
+        playerId:EXP.getPlayerId()
+      });
+      const data = await request(`/leaderboard?${q.toString()}`);
+      return {
+        connected:true,
+        source:"store-live",
+        weekKey:data.weekKey || weeklyKey(),
+        weekLabel:EXP.getWeekLabel(),
+        myRank:data.myRank ? safeNumber(data.myRank) : null,
+        myBest:safeNumber(data.myBest),
+        topScore:safeNumber(data.topScore),
+        rows:normalizeRows(data.rows)
+      };
+    } catch (error) {
+      console.debug("Leaderboard fallback", error);
+      return localSnapshot();
     }
-
-    const dailyBest = Math.max(dailyBefore, numericScore);
-    return {
-      dailyBefore,
-      dailyBest,
-      allTimeBest: Math.max(allTimeBefore, numericScore),
-      rank: numericScore > 0 ? localTop(seasonId).findIndex((item) => item.score === numericScore) + 1 : null,
-      top: localTop(seasonId),
-      isDailyRecord: localDailyRecord,
-      isAllTimeRecord: localAllTimeRecord,
-      reward: null,
-      source: "local-preview",
-      connected: false
-    };
   }
 
-  function getPrototypeRewardState(seasonId) {
-    const claimed = localStorage.getItem(rewardKey(seasonId)) === "1";
-    return { claimed, available: !claimed };
+  async function startGame({ gameId, nickname }) {
+    if (!apiBase()) return { connected:false, source:"local-preview", gameId };
+    try {
+      const data = await request("/game/start", {
+        method:"POST",
+        body:JSON.stringify({
+          storeId:CONFIG.store.id,
+          weekKey:weeklyKey(),
+          gameId,
+          playerId:EXP.getPlayerId(),
+          nickname
+        })
+      });
+      return { connected:true, source:"store-live", ...data };
+    } catch (error) {
+      console.debug("Game start fallback", error);
+      return { connected:false, source:"local-preview", gameId };
+    }
   }
 
-  function markPrototypeRewardShown(seasonId) {
-    localStorage.setItem(rewardKey(seasonId), "1");
-    return getPrototypeRewardState(seasonId);
+  async function pushEvents({ gameId, nickname, events, currentScore, maxLevel }) {
+    const local = setLocalBest(currentScore);
+    if (!apiBase()) {
+      return {
+        connected:false,
+        source:"local-preview",
+        accepted:events.length,
+        myBest:local.best,
+        myRank:local.best > 0 ? 1 : null,
+        topScore:local.best
+      };
+    }
+    try {
+      const data = await request("/game/events", {
+        method:"POST",
+        body:JSON.stringify({
+          storeId:CONFIG.store.id,
+          weekKey:weeklyKey(),
+          gameId,
+          playerId:EXP.getPlayerId(),
+          nickname,
+          events,
+          currentScore:safeNumber(currentScore),
+          maxLevel:safeNumber(maxLevel)
+        })
+      });
+      return {
+        connected:true,
+        source:"store-live",
+        accepted:safeNumber(data.accepted),
+        myBest:safeNumber(data.myBest),
+        myRank:data.myRank ? safeNumber(data.myRank) : null,
+        topScore:safeNumber(data.topScore)
+      };
+    } catch (error) {
+      console.debug("Event sync fallback", error);
+      return {
+        connected:false,
+        source:"local-preview",
+        accepted:0,
+        myBest:local.best,
+        myRank:local.best > 0 ? 1 : null,
+        topScore:local.best
+      };
+    }
   }
 
-  async function addTableScore({ seasonId, score }) {
-    const table = readTable();
-    const playerNumber = table.scores.length + 1;
-    table.scores.push({ playerNumber, seasonId, score: Math.round(score), at: Date.now() });
-    writeTable(table);
-    return getTableSnapshot();
+  async function finishGame({ gameId, nickname, currentScore, maxLevel, lastSeq }) {
+    const local = setLocalBest(currentScore);
+    if (!apiBase()) {
+      return {
+        connected:false,
+        source:"local-preview",
+        myBest:local.best,
+        myRank:local.best > 0 ? 1 : null,
+        topScore:local.best
+      };
+    }
+    try {
+      const data = await request("/game/finish", {
+        method:"POST",
+        body:JSON.stringify({
+          storeId:CONFIG.store.id,
+          weekKey:weeklyKey(),
+          gameId,
+          playerId:EXP.getPlayerId(),
+          nickname,
+          currentScore:safeNumber(currentScore),
+          maxLevel:safeNumber(maxLevel),
+          lastSeq:safeNumber(lastSeq)
+        })
+      });
+      return {
+        connected:true,
+        source:"store-live",
+        myBest:safeNumber(data.myBest),
+        myRank:data.myRank ? safeNumber(data.myRank) : null,
+        topScore:safeNumber(data.topScore)
+      };
+    } catch (error) {
+      console.debug("Finish sync fallback", error);
+      return {
+        connected:false,
+        source:"local-preview",
+        myBest:local.best,
+        myRank:local.best > 0 ? 1 : null,
+        topScore:local.best
+      };
+    }
   }
 
-  async function getTableSnapshot() {
-    const table = readTable();
-    const ranked = [...table.scores].sort((a, b) => b.score - a.score);
-    return {
-      count: table.scores.length,
-      nextPlayer: table.scores.length + 1,
-      latest: table.scores[table.scores.length - 1] || null,
-      leader: ranked[0] || null,
-      scores: ranked,
-      source: "session-device"
-    };
-  }
-
-  async function clearTable() {
-    sessionStorage.removeItem(TABLE_KEY);
-    return getTableSnapshot();
-  }
-
-  window.CaffiendLeaderboard = {
-    mode: getApiBase() ? "store-live" : "local-preview",
-    getSnapshot,
-    submitScore,
-    getPrototypeRewardState,
-    markPrototypeRewardShown,
-    addTableScore,
-    getTableSnapshot,
-    clearTable
+  window.DigulLeaderboard = {
+    mode: apiBase() ? "store-live" : "local-preview",
+    getLeaderboard,
+    startGame,
+    pushEvents,
+    finishGame,
+    getLocalBest,
+    setLocalBest
   };
 })();
