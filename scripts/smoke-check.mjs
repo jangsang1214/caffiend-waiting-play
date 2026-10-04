@@ -15,7 +15,7 @@ const requiredIds = [
   "myRankValue","topScoreValue","recipeButton","recipeButtonPreview","rankingButton",
   "resultOverlay","restartButton","recipeOverlay","rankingOverlay","rankingList",
   "openSouffleButton","openMysteryButton","souffleScreen","mysteryScreen",
-  "whiskButton","ovenTapButton","finishSouffleButton","suspectGrid","nextClueButton"
+  "whiskButton","ovenTapButton","finishSouffleButton","suspectGrid","nextClueButton","spriteLayer","dropSprite"
 ];
 
 for (const id of requiredIds) {
@@ -33,7 +33,7 @@ const sandbox = { window: {} };
 vm.runInNewContext(configSource, sandbox);
 const config = sandbox.window.DIGUL_CONFIG;
 if (!config) throw new Error("DIGUL_CONFIG not found");
-if (config.version !== "1.6.1") throw new Error("Unexpected UI version");
+if (config.version !== "1.7.0") throw new Error("Unexpected UI version");
 if (!Array.isArray(config.menus) || config.menus.length !== 11) throw new Error("Exactly 11 menu stages are required");
 
 config.menus.forEach((menu, index) => {
@@ -44,6 +44,7 @@ config.menus.forEach((menu, index) => {
 if (config.ranking.period !== "weekly") throw new Error("Leaderboard must use weekly aggregation");
 if (!config.store.leaderboardApi.includes("supabase.co/functions/v1/digul-api")) throw new Error("Live Supabase leaderboard API is not configured");
 if (config.gameplay.completionBonus !== 150) throw new Error("Completion bonus must remain 150");
+if (config.assets.renderer !== "dom-procedural-raster-v1") throw new Error("DOM raster renderer must be active");
 
 const scriptOrder = ["config.js","experience.js","leaderboard.js","analytics.js","dessert-art.js","sprite-renderer.js","game.js","side-games.js"];
 let cursor = -1;
@@ -62,6 +63,7 @@ if (!spriteRenderer.includes("window.DigulSpriteRenderer")) throw new Error("Uni
 if (!spriteRenderer.includes("selfTest")) throw new Error("Sprite renderer self-test missing");
 if (!game.includes("requestAnimationFrame(frame)")) throw new Error("Render loop missing");
 if (!game.includes("window.__DIGUL_DIAGNOSTICS__")) throw new Error("Runtime diagnostics missing");
+if (!game.includes("physics-dessert") || !game.includes("syncSprites")) throw new Error("DOM physics sprite layer missing");
 if (game.indexOf("requestAnimationFrame(frame)") > game.lastIndexOf("refreshLeaderboard(true).catch")) {
   throw new Error("Render loop must start before network leaderboard refresh");
 }
