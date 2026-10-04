@@ -533,12 +533,19 @@
   function drawMenu(level, x, y, angle = 0, alpha = 1) {
     const menu = menus[level];
     const radius = menu.radius;
-    const size = radius * 2.58;
+    const size = radius * (2.82 + Math.min(level, 10) * 0.035);
     ctx.save();
     ctx.globalAlpha = alpha;
     ctx.translate(x, y);
     ctx.rotate(angle);
-    if (menu.image) ctx.drawImage(menu.image, -size / 2, -size / 2, size, size);
+    if (menu.image) {
+      if (level >= 5) {
+        ctx.shadowColor = level >= 9 ? "rgba(232,156,47,.34)" : "rgba(113,70,40,.22)";
+        ctx.shadowBlur = level >= 9 ? 10 : 6;
+        ctx.shadowOffsetY = 3;
+      }
+      ctx.drawImage(menu.image, -size / 2, -size / 2, size, size);
+    }
     else drawFallback(menu, radius);
     ctx.restore();
   }
