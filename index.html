@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@500;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./style.css?v=1.6.1">
+  <link rel="stylesheet" href="./style.css?v=1.7.0">
 </head>
 <body>
   <main class="app" aria-live="polite">
@@ -116,6 +116,8 @@
         <div class="board-wrap">
           <div class="bowl-rim" aria-hidden="true"></div>
           <canvas id="gameCanvas" aria-label="디저트 합체 게임"></canvas>
+          <div id="spriteLayer" class="sprite-layer" aria-hidden="true"></div>
+          <div id="dropSprite" class="drop-sprite" aria-hidden="true"></div>
           <div id="dropGuide" class="drop-guide">끌고 · 놓기</div>
         </div>
         <div class="rank-strip">
@@ -285,13 +287,13 @@
   </main>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
-  <script src="./config.js?v=1.6.1"></script>
-  <script src="./experience.js?v=1.6.1"></script>
-  <script src="./leaderboard.js?v=1.6.1"></script>
-  <script src="./analytics.js?v=1.6.1"></script>
-  <script src="./dessert-art.js?v=1.6.1"></script>
-  <script src="./sprite-renderer.js?v=1.6.1"></script>
-  <script src="./game.js?v=1.6.1"></script>
-  <script src="./side-games.js?v=1.6.1"></script>
+  <script src="./config.js?v=1.7.0"></script>
+  <script src="./experience.js?v=1.7.0"></script>
+  <script src="./leaderboard.js?v=1.7.0"></script>
+  <script src="./analytics.js?v=1.7.0"></script>
+  <script src="./dessert-art.js?v=1.7.0"></script>
+  <script src="./sprite-renderer.js?v=1.7.0"></script>
+  <script src="./game.js?v=1.7.0"></script>
+  <script src="./side-games.js?v=1.7.0"></script>
 </body>
 </html>
