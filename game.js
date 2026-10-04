@@ -3,8 +3,13 @@
   const EXP = window.DigulExperience;
   const BOARD = window.DigulLeaderboard;
   const ANALYTICS = window.DigulAnalytics;
-  const ART = window.DigulDessertArt;
-  if (!CONFIG || !EXP || !BOARD || !window.Matter) return;
+  const SPRITES = window.DigulSpriteRenderer;
+  if (!CONFIG || !EXP || !BOARD || !SPRITES || !window.Matter) {
+    console.error("DIGUL boot dependency missing", {
+      config:!!CONFIG, experience:!!EXP, leaderboard:!!BOARD, sprites:!!SPRITES, matter:!!window.Matter
+    });
+    return;
+  }
 
   const $ = id => document.getElementById(id);
   const {
@@ -18,21 +23,6 @@
     image: null,
     imageFailed: false
   }));
-
-  const MENU_ATLAS_URL = "./assets/menu/menu-atlas-v2.webp?v=6";
-  const MENU_ATLAS_COLS = 4;
-  const MENU_ATLAS_ROWS = 3;
-  const MENU_ATLAS_CELL_W = 128;
-  const MENU_ATLAS_CELL_H = 128;
-  const menuAtlas = new Image();
-  menuAtlas.decoding = "async";
-  let menuAtlasLoaded = false;
-  menuAtlas.onload = () => {
-    menuAtlasLoaded = menuAtlas.naturalWidth === 512 && menuAtlas.naturalHeight === 384;
-    if (!menuAtlasLoaded) console.warn("DIGUL atlas size mismatch", menuAtlas.naturalWidth, menuAtlas.naturalHeight);
-  };
-  menuAtlas.onerror = () => { menuAtlasLoaded = false; };
-  menuAtlas.src = MENU_ATLAS_URL;
 
   const state = {
     score:0,
@@ -54,7 +44,10 @@
     lastLeaderboard:null,
     lastFlushAt:0,
     lastRankRefreshAt:0,
-    firstDrop:true
+    firstDrop:true,
+    frameCount:0,
+    dessertDraws:0,
+    lastDessertDrawAt:0
   };
 
   const els = {
@@ -102,44 +95,30 @@
   }
 
   function loadAssets() {
-    // The production dessert art is the raster sprite atlas above.
-    // ART remains available for the side-game scenes, but DIGUL rendering no longer depends on it.
-  }
-
-  function appendGeneratedArt(target, level, size) {
-    if (!target) return;
-    target.innerHTML = "";
-    target.style.width = `${size}px`;
-    target.style.height = `${size}px`;
-
-    const safe = Math.max(0, Math.min(menus.length - 1, level | 0));
-    const col = safe % MENU_ATLAS_COLS;
-    const row = Math.floor(safe / MENU_ATLAS_COLS);
-    const sprite = document.createElement("div");
-    sprite.className = "dessert-sprite";
-    sprite.setAttribute("role", "img");
-    sprite.setAttribute("aria-label", menus[safe].name);
-    sprite.style.backgroundImage = `url("${MENU_ATLAS_URL}")`;
-    sprite.style.backgroundSize = `${MENU_ATLAS_COLS * 100}% ${MENU_ATLAS_ROWS * 100}%`;
-    sprite.style.backgroundPosition = `${col / (MENU_ATLAS_COLS - 1) * 100}% ${row / (MENU_ATLAS_ROWS - 1) * 100}%`;
-    target.appendChild(sprite);
+    SPRITES.load().then(() => {
+      updateNextPreview();
+      menuThumb(els.recipeButtonPreview, 0, 48);
+      renderRecipe();
+    });
   }
 
   function menuThumb(target, level, size = 48) {
-    appendGeneratedArt(target, level, size);
+    SPRITES.mount(target, level, size);
   }
 
   function createInlineThumb(level) {
     const el = document.createElement("div");
     el.className = "thumb menu-sprite";
-    appendGeneratedArt(el, level, 46);
+    SPRITES.mount(el, level, 52);
     return el;
   }
 
   function showGameScreen() {
     document.querySelectorAll(".screen.active").forEach(screen => screen.classList.remove("active"));
     els.game.classList.add("active");
+    resizeCanvas();
     requestAnimationFrame(resizeCanvas);
+    setTimeout(resizeCanvas, 60);
   }
 
   function showEntryScreen() {
@@ -373,7 +352,7 @@
     }
   }
 
-  async function beginGame() {
+  function beginGame() {
     clearItems();
     state.gameId = EXP.newGameId();
     state.eventSeq = 0;
@@ -395,15 +374,20 @@
     closeLayer(els.pauseOverlay, "manual");
     els.pauseButton.textContent = "Ⅱ";
     updateNextPreview();
-    menuThumb(els.recipeButtonPreview, 0, 43);
+    menuThumb(els.recipeButtonPreview, 0, 48);
     renderRecipe();
-    await BOARD.startGame({
+    lastFrame = performance.now();
+    drawBoard(lastFrame);
+    track("game_start");
+
+    BOARD.startGame({
       gameId:state.gameId,
       nickname:EXP.getNickname()
-    });
-    await refreshLeaderboard(true);
-    lastFrame = performance.now();
-    track("game_start");
+    }).then(result => {
+      if (result?.connected) refreshLeaderboard(true);
+    }).catch(() => {});
+
+    refreshLeaderboard(true).catch(() => {});
   }
 
   function dropCurrent() {
@@ -527,51 +511,13 @@
     track("game_finish", { maxLevel:state.maxLevel + 1 });
   }
 
-  function drawFallback(menu, radius) {
-    ctx.beginPath();
-    ctx.arc(0, 0, radius, 0, Math.PI * 2);
-    ctx.fillStyle = menu.tone;
-    ctx.fill();
-    ctx.strokeStyle = "rgba(59,44,36,.18)";
-    ctx.lineWidth = 1.6;
-    ctx.stroke();
-    ctx.fillStyle = "#fff";
-    ctx.font = `800 ${Math.max(10, radius * .75)}px system-ui`;
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText(menu.fallback, 0, 1);
-  }
-
   function drawMenu(level, x, y, angle = 0, alpha = 1) {
     const menu = menus[level];
     const radius = menu.radius;
-    const size = radius * (3.28 + Math.min(level, 10) * 0.055);
-    ctx.save();
-    ctx.globalAlpha = alpha;
-    ctx.translate(x, y);
-    ctx.rotate(angle);
-
-    if (menuAtlasLoaded) {
-      const col = level % MENU_ATLAS_COLS;
-      const row = Math.floor(level / MENU_ATLAS_COLS);
-      ctx.shadowColor = level >= 8 ? "rgba(113,55,24,.34)" : "rgba(74,39,21,.22)";
-      ctx.shadowBlur = level >= 8 ? 11 : 6;
-      ctx.shadowOffsetY = level >= 8 ? 5 : 3;
-      ctx.drawImage(
-        menuAtlas,
-        col * MENU_ATLAS_CELL_W,
-        row * MENU_ATLAS_CELL_H,
-        MENU_ATLAS_CELL_W,
-        MENU_ATLAS_CELL_H,
-        -size / 2,
-        -size / 2,
-        size,
-        size
-      );
-    } else {
-      drawFallback(menu, radius);
-    }
-    ctx.restore();
+    const size = radius * (3.62 + Math.min(level, 10) * 0.065);
+    SPRITES.draw(ctx, level, x, y, size, angle, alpha);
+    state.dessertDraws += 1;
+    state.lastDessertDrawAt = performance.now();
   }
 
   function drawBoard(now) {
@@ -659,6 +605,7 @@
   }
 
   function frame(now) {
+    state.frameCount += 1;
     const dt = Math.min(now - lastFrame, 100);
     lastFrame = now;
     if (state.gameStarted && !state.gameOver && !isPaused()) {
@@ -714,12 +661,12 @@
     return checked.value;
   }
 
-  els.startButton.addEventListener("click", async () => {
+  els.startButton.addEventListener("click", () => {
     const nickname = validateAndSave(els.nicknameInput, els.nicknameError);
     if (!nickname) return;
     els.nicknameDisplay.textContent = nickname;
     showGameScreen();
-    await beginGame();
+    beginGame();
   });
 
   els.nicknameInput.addEventListener("keydown", event => {
@@ -790,7 +737,29 @@
     else removePause("hidden");
   });
 
-  async function boot() {
+  function diagnostics() {
+    return {
+      version:CONFIG.version,
+      renderer:SPRITES.status(),
+      rendererTest:SPRITES.selfTest(),
+      frameCount:state.frameCount,
+      dessertDraws:state.dessertDraws,
+      lastDessertDrawAt:state.lastDessertDrawAt,
+      canvas:{
+        width:els.canvas.width,
+        height:els.canvas.height,
+        cssWidth:els.canvas.getBoundingClientRect().width,
+        cssHeight:els.canvas.getBoundingClientRect().height
+      },
+      gameStarted:state.gameStarted,
+      bodies:Composite.allBodies(world).filter(isItem).length,
+      currentLevel:state.currentLevel + 1,
+      nextLevel:state.nextLevel + 1
+    };
+  }
+  window.__DIGUL_DIAGNOSTICS__ = diagnostics;
+
+  function boot() {
     loadAssets();
     const saved = EXP.getNickname();
     els.nicknameInput.value = saved;
@@ -799,11 +768,15 @@
     els.weekLabelEntry.textContent = `이번 주 · ${EXP.getWeekLabel()}`;
     state.best = BOARD.getLocalBest();
     els.personalBest.textContent = state.best.toLocaleString("ko-KR");
-    menuThumb(els.recipeButtonPreview, 0, 43);
+    menuThumb(els.recipeButtonPreview, 0, 48);
     renderRecipe();
-    await refreshLeaderboard(true);
+
+    // Rendering starts immediately and never waits for network or leaderboard work.
     resizeCanvas();
+    lastFrame = performance.now();
     requestAnimationFrame(frame);
+
+    refreshLeaderboard(true).catch(() => {});
   }
 
   boot();
