@@ -4,13 +4,17 @@ import vm from "node:vm";
 const index = fs.readFileSync("index.html", "utf8");
 const style = fs.readFileSync("style.css", "utf8");
 const game = fs.readFileSync("game.js", "utf8");
+const sideGames = fs.readFileSync("side-games.js", "utf8");
+const dessertArt = fs.readFileSync("dessert-art.js", "utf8");
 const configSource = fs.readFileSync("config.js", "utf8");
 
 const requiredIds = [
   "entryScreen","gameScreen","nicknameInput","startButton","nicknameDisplay","pauseButton",
   "scoreValue","personalBestValue","nextPreview","gameCanvas","connectionPill","connectionText",
   "myRankValue","topScoreValue","recipeButton","recipeButtonPreview","rankingButton",
-  "resultOverlay","restartButton","recipeOverlay","rankingOverlay","rankingList"
+  "resultOverlay","restartButton","recipeOverlay","rankingOverlay","rankingList",
+  "openSouffleButton","openMysteryButton","souffleScreen","mysteryScreen",
+  "whiskButton","ovenTapButton","finishSouffleButton","suspectGrid","nextClueButton"
 ];
 
 for (const id of requiredIds) {
@@ -20,7 +24,7 @@ for (const id of requiredIds) {
   }
 }
 
-if (/<svg\b/i.test(index + style + game) || /data:image\/svg/i.test(index + style + game)) {
+if (/<svg\b/i.test(index + style + game + sideGames + dessertArt) || /data:image\/svg/i.test(index + style + game + sideGames + dessertArt)) {
   throw new Error("SVG UI assets are not allowed in the current DIGUL visual direction.");
 }
 
@@ -28,7 +32,7 @@ const sandbox = { window: {} };
 vm.runInNewContext(configSource, sandbox);
 const config = sandbox.window.DIGUL_CONFIG;
 if (!config) throw new Error("DIGUL_CONFIG not found");
-if (config.version !== "1.1.0") throw new Error("Unexpected UI version");
+if (config.version !== "1.2.0") throw new Error("Unexpected UI version");
 if (!Array.isArray(config.menus) || config.menus.length !== 11) throw new Error("Exactly 11 menu stages are required");
 
 config.menus.forEach((menu, index) => {
@@ -39,7 +43,7 @@ config.menus.forEach((menu, index) => {
 if (config.ranking.period !== "weekly") throw new Error("Leaderboard must use weekly aggregation");
 if (config.gameplay.completionBonus !== 150) throw new Error("Completion bonus must remain 150");
 
-const scriptOrder = ["config.js","experience.js","leaderboard.js","analytics.js","game.js"];
+const scriptOrder = ["config.js","experience.js","leaderboard.js","analytics.js","dessert-art.js","game.js","side-games.js"];
 let cursor = -1;
 for (const script of scriptOrder) {
   const next = index.indexOf(script);
@@ -47,4 +51,7 @@ for (const script of scriptOrder) {
   cursor = next;
 }
 
-console.log("DIGUL static smoke checks passed.");
+if (!dessertArt.includes("window.DigulDessertArt")) throw new Error("Generated dessert art engine missing");
+if (!sideGames.includes("openSouffleButton") || !sideGames.includes("openMysteryButton")) throw new Error("Side game wiring missing");
+
+console.log("CAFFIEND PLAY static smoke checks passed.");
