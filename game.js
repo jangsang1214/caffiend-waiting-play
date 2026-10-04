@@ -362,6 +362,7 @@
   }
 
   async function beginGame() {
+    await ART?.ready?.();
     clearItems();
     state.gameId = EXP.newGameId();
     state.eventSeq = 0;
@@ -533,20 +534,16 @@
   function drawMenu(level, x, y, angle = 0, alpha = 1) {
     const menu = menus[level];
     const radius = menu.radius;
-    const size = radius * (2.82 + Math.min(level, 10) * 0.035);
+    const size = radius * (3.10 + Math.min(level, 10) * 0.045);
+    if (ART?.drawTo) {
+      ART.drawTo(ctx, level, x, y, size, angle, alpha);
+      return;
+    }
     ctx.save();
     ctx.globalAlpha = alpha;
     ctx.translate(x, y);
     ctx.rotate(angle);
-    if (menu.image) {
-      if (level >= 5) {
-        ctx.shadowColor = level >= 9 ? "rgba(232,156,47,.34)" : "rgba(113,70,40,.22)";
-        ctx.shadowBlur = level >= 9 ? 10 : 6;
-        ctx.shadowOffsetY = 3;
-      }
-      ctx.drawImage(menu.image, -size / 2, -size / 2, size, size);
-    }
-    else drawFallback(menu, radius);
+    drawFallback(menu, radius);
     ctx.restore();
   }
 
