@@ -46,7 +46,7 @@
     nicknameInput:$("nicknameInput"), nicknameError:$("nicknameError"), startButton:$("startButton"),
     weekLabelEntry:$("weekLabelEntry"), nicknameButton:$("nicknameButton"), nicknameDisplay:$("nicknameDisplay"),
     pauseButton:$("pauseButton"), score:$("scoreValue"), personalBest:$("personalBestValue"),
-    nextPreview:$("nextPreview"), canvas:$("gameCanvas"), boardWrap:document.querySelector(".board-wrap"),
+    nextPreview:$("nextPreview"), recipeButtonPreview:$("recipeButtonPreview"), canvas:$("gameCanvas"), boardWrap:document.querySelector(".board-wrap"),
     dropGuide:$("dropGuide"), connectionPill:$("connectionPill"), connectionText:$("connectionText"),
     myRank:$("myRankValue"), weekLabel:$("weekLabel"), topScore:$("topScoreValue"),
     recipeButton:$("recipeButton"), rankingButton:$("rankingButton"),
@@ -257,13 +257,13 @@
     els.connectionPill.classList.remove("is-live", "is-local", "is-offline");
     if (snapshot.connected) {
       els.connectionPill.classList.add("is-live");
-      els.connectionText.textContent = "LIVE";
+      els.connectionText.textContent = "실시간";
     } else if (CONFIG.store.leaderboardApi) {
       els.connectionPill.classList.add("is-offline");
-      els.connectionText.textContent = "OFFLINE";
+      els.connectionText.textContent = "오프라인";
     } else {
       els.connectionPill.classList.add("is-local");
-      els.connectionText.textContent = "LOCAL";
+      els.connectionText.textContent = "내 기록";
     }
   }
 
@@ -305,8 +305,10 @@
     }
     rows.forEach(row => {
       const item = document.createElement("div");
-      item.className = `ranking-row${row.mine ? " mine" : ""}`;
-      item.innerHTML = `<span class="rank">#${row.rank}</span><span class="name">${escapeHtml(row.nickname)}${row.mine ? " · 나" : ""}</span><span class="points">${Number(row.score).toLocaleString("ko-KR")}</span>`;
+      const rankClass = row.rank <= 3 ? ` rank-${row.rank}` : "";
+      item.className = `ranking-row${rankClass}${row.mine ? " mine" : ""}`;
+      const mineBadge = row.mine ? '<span class="mine-badge">나</span>' : "";
+      item.innerHTML = `<span class="rank">${row.rank}</span><span class="name">${mineBadge}${escapeHtml(row.nickname)}</span><span class="points">${Number(row.score).toLocaleString("ko-KR")}</span>`;
       els.rankingList.appendChild(item);
     });
   }
@@ -395,6 +397,7 @@
     closeLayer(els.pauseOverlay, "manual");
     els.pauseButton.textContent = "Ⅱ";
     updateNextPreview();
+    menuThumb(els.recipeButtonPreview, 0, 43);
     renderRecipe();
     await BOARD.startGame({
       gameId:state.gameId,
@@ -562,14 +565,27 @@
     ctx.clearRect(0, 0, W, H);
 
     const bg = ctx.createLinearGradient(0, 0, 0, H);
-    bg.addColorStop(0, "#fffaf0");
-    bg.addColorStop(1, "#f2e1cb");
+    bg.addColorStop(0, "#fff8ed");
+    bg.addColorStop(.58, "#f8e8d4");
+    bg.addColorStop(1, "#ecd0ae");
     ctx.fillStyle = bg;
     ctx.fillRect(0, 0, W, H);
 
-    ctx.fillStyle = "rgba(191,150,112,.12)";
+    ctx.save();
+    ctx.globalAlpha = .20;
+    ctx.translate(-70, 80);
+    ctx.rotate(-.22);
+    const sunlight = ctx.createLinearGradient(0, 0, 0, H);
+    sunlight.addColorStop(0, "rgba(255,255,235,.95)");
+    sunlight.addColorStop(1, "rgba(255,244,200,0)");
+    ctx.fillStyle = sunlight;
+    ctx.fillRect(0, 0, 52, H * .82);
+    ctx.fillRect(92, 18, 28, H * .70);
+    ctx.restore();
+
+    ctx.fillStyle = "rgba(170,110,68,.10)";
     ctx.beginPath();
-    ctx.ellipse(W / 2, H - 7, W * .46, 24, 0, 0, Math.PI * 2);
+    ctx.ellipse(W / 2, H - 9, W * .45, 22, 0, 0, Math.PI * 2);
     ctx.fill();
 
     const danger = state.dangerMs > 0;
@@ -587,7 +603,7 @@
       const x = clampDropX(state.dropX);
       ctx.save();
       ctx.setLineDash([3, 6]);
-      ctx.strokeStyle = "rgba(90,66,50,.20)";
+      ctx.strokeStyle = "rgba(125,57,25,.54)";
       ctx.beginPath();
       ctx.moveTo(x, CONFIG.physics.dropY + menus[state.currentLevel].radius);
       ctx.lineTo(x, H - 15);
@@ -609,7 +625,7 @@
       }
       ctx.save();
       ctx.globalAlpha = 1 - t;
-      ctx.fillStyle = "#667d62";
+      ctx.fillStyle = "#d9781e";
       ctx.font = "800 18px system-ui";
       ctx.textAlign = "center";
       ctx.fillText(`+${item.points}`, item.x, item.y - 10 - t * 28);
@@ -617,13 +633,13 @@
     }
 
     ctx.save();
-    ctx.strokeStyle = "rgba(164,118,80,.40)";
-    ctx.lineWidth = 7;
+    ctx.strokeStyle = "rgba(164,104,62,.20)";
+    ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.moveTo(4, 112);
-    ctx.quadraticCurveTo(0, H * .72, 32, H - 10);
-    ctx.moveTo(W - 4, 112);
-    ctx.quadraticCurveTo(W, H * .72, W - 32, H - 10);
+    ctx.moveTo(15, 112);
+    ctx.quadraticCurveTo(10, H * .76, 36, H - 15);
+    ctx.moveTo(W - 15, 112);
+    ctx.quadraticCurveTo(W - 10, H * .76, W - 36, H - 15);
     ctx.stroke();
     ctx.restore();
   }
@@ -758,6 +774,7 @@
     els.weekLabelEntry.textContent = `이번 주 · ${EXP.getWeekLabel()}`;
     state.best = BOARD.getLocalBest();
     els.personalBest.textContent = state.best.toLocaleString("ko-KR");
+    menuThumb(els.recipeButtonPreview, 0, 43);
     renderRecipe();
     await refreshLeaderboard(true);
     resizeCanvas();
