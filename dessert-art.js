@@ -114,16 +114,23 @@
   }
 
   function drawTo(ctx,level,x,y,size,rotation=0,alpha=1){
-    if(!loaded) return;
-    const b=bounds[level];
-    if(!b) return;
-    const aspect=b.sw/b.sh;
-    let dw=size,dh=size/aspect;
-    if(dh>size){dh=size;dw=size*aspect}
+    level=Math.max(0,Math.min(COUNT-1,level|0));
     ctx.save();
     ctx.globalAlpha=alpha;
     ctx.translate(x,y);
     ctx.rotate(rotation);
+
+    if(!loaded || !bounds[level]){
+      fallback(ctx,size,level);
+      ctx.restore();
+      return;
+    }
+
+    const b=bounds[level];
+    const aspect=b.sw/b.sh;
+    let dw=size,dh=size/aspect;
+    if(dh>size){dh=size;dw=size*aspect}
+
     ctx.shadowColor=level>=8?"rgba(112,55,25,.28)":"rgba(72,39,23,.16)";
     ctx.shadowBlur=level>=8?9:5;
     ctx.shadowOffsetY=3;
