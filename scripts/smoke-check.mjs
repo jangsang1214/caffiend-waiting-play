@@ -52,7 +52,8 @@ for (const script of scriptOrder) {
   cursor = next;
 }
 
-if (!dessertArt.includes("window.DigulDessertArt")) throw new Error("Dessert art engine missing");\nif (!dessertArt.includes("menu-atlas-v2.webp")) throw new Error("High-quality raster menu atlas missing from renderer");
+if (!dessertArt.includes("window.DigulDessertArt")) throw new Error("Dessert art engine missing");
+if (!dessertArt.includes("menu-atlas-v2.webp")) throw new Error("High-quality raster menu atlas missing from renderer");
 if (!sideGames.includes("openSouffleButton") || !sideGames.includes("openMysteryButton")) throw new Error("Side game wiring missing");
 
 console.log("CAFFIEND PLAY static smoke checks passed.");
