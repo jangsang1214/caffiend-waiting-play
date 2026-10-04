@@ -55,11 +55,29 @@
   }
 
   function pancake(ctx,y,w=134,h=30){
-    const side=linear(ctx,0,y-h/2,0,y+h/2,"#ffd99d","#efad5e","#c87934");
-    ellipse(ctx,128,y,w/2,h/2,side,"rgba(100,47,20,.45)",1.1);
-    ellipse(ctx,128,y-h*.18,w*.46,h*.30,linear(ctx,75,y-15,180,y,"#fff0c7","#e9aa5e"),"rgba(130,72,35,.28)",.7);
-    ctx.save();ctx.globalAlpha=.5;ctx.strokeStyle="#f9d08f";ctx.lineWidth=1;
-    ctx.beginPath();ctx.ellipse(119,y-3,w*.34,h*.17,0,0,TAU);ctx.stroke();ctx.restore();
+    const side=linear(ctx,0,y-h/2,0,y+h/2,"#ffe3ad","#efa958","#b9682f");
+    ellipse(ctx,128,y,w/2,h/2,side,"rgba(91,42,19,.48)",1.05);
+    ellipse(ctx,128,y-h*.20,w*.46,h*.30,radial(ctx,119,y-5,w*.40,"#fff1bf","#df9148"),"rgba(130,72,35,.30)",.7);
+
+    ctx.save();
+    ctx.globalAlpha=.36;
+    ctx.strokeStyle="#fff0bd";ctx.lineWidth=1;
+    ctx.beginPath();ctx.ellipse(118,y-4,w*.34,h*.16,0,0,TAU);ctx.stroke();
+
+    const rnd=seeded(Math.round(y*97+w*13));
+    for(let i=0;i<24;i++){
+      const a=rnd()*TAU, rr=Math.sqrt(rnd())*w*.34;
+      const px=128+Math.cos(a)*rr;
+      const py=y-h*.18+Math.sin(a)*rr*.14;
+      const pr=.45+rnd()*.75;
+      ellipse(ctx,px,py,pr,pr*.65,i%4===0?"#fff0c4":"#b96f39");
+    }
+    ctx.restore();
+
+    ctx.save();ctx.globalAlpha=.22;
+    const edge=ctx.createLinearGradient(0,y,0,y+h*.5);
+    edge.addColorStop(0,"rgba(255,255,255,.7)");edge.addColorStop(1,"rgba(90,35,12,0)");
+    ctx.fillStyle=edge;ctx.fillRect(75,y,106,h*.42);ctx.restore();
   }
 
   function stack(ctx,layers=3,offset=27){
@@ -68,9 +86,11 @@
   }
 
   function creamBlob(ctx,x,y,w,h,shade="#fff8ed"){
-    const g=radial(ctx,x,y,Math.max(w,h)*.52,"#fffef9",shade);
-    ellipse(ctx,x,y,w/2,h/2,g,"rgba(116,79,55,.25)",.7);
-    ctx.save();ctx.globalAlpha=.55;ellipse(ctx,x-w*.12,y-h*.16,w*.19,h*.09,"#fff");ctx.restore();
+    const g=ctx.createRadialGradient(x-w*.14,y-h*.22,1,x,y,Math.max(w,h)*.54);
+    g.addColorStop(0,"#ffffff");g.addColorStop(.48,shade);g.addColorStop(1,"#e6d2bd");
+    ellipse(ctx,x,y,w/2,h/2,g,"rgba(104,72,52,.24)",.7);
+    ctx.save();ctx.globalAlpha=.62;ellipse(ctx,x-w*.15,y-h*.18,w*.18,h*.075,"#fff");ctx.restore();
+    ctx.save();ctx.globalAlpha=.18;ellipse(ctx,x+w*.10,y+h*.20,w*.23,h*.08,"#9d7358");ctx.restore();
   }
 
   function whippedCream(ctx,baseY=100,tint="#fff8ef"){
@@ -196,6 +216,17 @@
     bowl(ctx);
     const g=radial(ctx,128,106,66,iceA,iceB);
     ellipse(ctx,128,105,63,34,g,"rgba(99,58,36,.38)",.9);
+    const rnd=seeded(909);
+    ctx.save();
+    for(let i=0;i<55;i++){
+      const a=rnd()*TAU, rr=Math.sqrt(rnd())*55;
+      const x=128+Math.cos(a)*rr;
+      const y=103+Math.sin(a)*rr*.48;
+      const s=.6+rnd()*1.5;
+      ctx.globalAlpha=.16+rnd()*.30;
+      ellipse(ctx,x,y,s,s*.65,i%3===0?"#ffffff":"#f2e7dc");
+    }
+    ctx.restore();
   }
 
   function drawLotus(ctx){
