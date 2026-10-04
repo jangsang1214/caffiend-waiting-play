@@ -1,455 +1,768 @@
 (() => {
-  const CONFIG = window.CAFFIEND_CONFIG;
-  const EXPERIENCE = window.CaffiendExperience;
-  const LEADERBOARD = window.CaffiendLeaderboard;
-  const ANALYTICS = window.CaffiendAnalytics;
-  if (!CONFIG || !EXPERIENCE || !LEADERBOARD) return;
+  const CONFIG = window.DIGUL_CONFIG;
+  const EXP = window.DigulExperience;
+  const BOARD = window.DigulLeaderboard;
+  const ANALYTICS = window.DigulAnalytics;
+  if (!CONFIG || !EXP || !BOARD || !window.Matter) return;
 
-  const $ = (id) => document.getElementById(id);
-  const screens = { intro: $("introScreen"), game: $("gameScreen"), result: $("resultScreen") };
-  const els = {
-    soundBtn: $("soundBtn"), hapticText: $("hapticText"),
-    seasonIndex: $("seasonIndex"), seasonLabel: $("seasonLabel"), seasonCampaign: $("seasonCampaign"), seasonMode: $("seasonMode"), seasonStoryHeadline: $("seasonStoryHeadline"), seasonStoryBody: $("seasonStoryBody"),
-    challengeBanner: $("challengeBanner"), challengeTarget: $("challengeTarget"), gameChallenge: $("gameChallenge"), gameChallengeTarget: $("gameChallengeTarget"),
-    introStoreBest: $("introStoreBest"), introRank: $("introRank"), introTop: $("introTop"), leaderboardStatus: $("leaderboardStatus"), boardDisclosure: $("boardDisclosure"),
-    passportCount: $("passportCount"), passportCopy: $("passportCopy"), introBest: $("introBest"), modeDescription: $("modeDescription"), startBtn: $("startBtn"),
-    gameSeason: $("gameSeason"), gameMode: $("gameMode"), brandLine: $("brandLine"), phasePill: $("phasePill"), timeValue: $("timeValue"), scoreValue: $("scoreValue"), comboValue: $("comboValue"), perfectValue: $("perfectValue"),
-    processStep: $("processStep"), processLabel: $("processLabel"), gameStage: $("gameStage"), souffle: $("souffle"), fruitBonus: $("fruitBonus"), feedback: $("feedback"), bonusToast: $("bonusToast"), meterMode: $("meterMode"), greatZone: $("greatZone"), perfectZone: $("perfectZone"), meterNeedle: $("meterNeedle"), tapBtn: $("tapBtn"),
-    resultSeason: $("resultSeason"), shareSeason: $("shareSeason"), shareCopy: $("shareCopy"), resultDate: $("resultDate"), finalScore: $("finalScore"), resultBadge: $("resultBadge"), resultMessage: $("resultMessage"), maxComboValue: $("maxComboValue"), perfectRateValue: $("perfectRateValue"), bestScore: $("bestScore"),
-    challengeOutcome: $("challengeOutcome"), challengeOutcomeTitle: $("challengeOutcomeTitle"), challengeOutcomeCopy: $("challengeOutcomeCopy"),
-    resultBoardStatus: $("resultBoardStatus"), storeRanking: $("storeRanking"), resultRank: $("resultRank"), rankGap: $("rankGap"),
-    rewardNotice: $("rewardNotice"), rewardEyebrow: $("rewardEyebrow"), rewardHeadline: $("rewardHeadline"), rewardBody: $("rewardBody"),
-    tablePanel: $("tablePanel"), tableCount: $("tableCount"), tableRanking: $("tableRanking"), nextPlayerBtn: $("nextPlayerBtn"),
-    resultPassportTitle: $("resultPassportTitle"), resultPassportCount: $("resultPassportCount"), resultPassportCopy: $("resultPassportCopy"),
-    productSeason: $("productSeason"), productLabel: $("productLabel"), productName: $("productName"), productCopy: $("productCopy"), seasonCta: $("seasonCta"), seasonStoryPanel: $("seasonStoryPanel"), storyPanelTitle: $("storyPanelTitle"), storyPanelBody: $("storyPanelBody"), tasteTip: $("tasteTip"),
-    retryBtn: $("retryBtn"), challengeShareBtn: $("challengeShareBtn"), shareBtn: $("shareBtn")
+  const $ = id => document.getElementById(id);
+  const {
+    Engine, Bodies, Composite, Events, Body
+  } = Matter;
+
+  const menus = CONFIG.menus.map((menu, index) => ({
+    ...menu,
+    index,
+    radius: CONFIG.physics.baseRadius * menu.diameter,
+    image: null,
+    imageFailed: false
+  }));
+
+  const state = {
+    score:0,
+    best:0,
+    currentLevel:0,
+    nextLevel:0,
+    dropX:CONFIG.physics.width / 2,
+    canDrop:true,
+    gameOver:false,
+    gameStarted:false,
+    dangerMs:0,
+    maxLevel:0,
+    gameId:"",
+    eventSeq:0,
+    eventBuffer:[],
+    flushBusy:false,
+    pressing:false,
+    pauseReasons:new Set(),
+    lastLeaderboard:null,
+    lastFlushAt:0,
+    lastRankRefreshAt:0,
+    firstDrop:true
   };
 
-  const seasonButtons = Array.from(document.querySelectorAll(".season-option"));
-  const modeButtons = Array.from(document.querySelectorAll(".mode-option"));
-  const difficultyItems = Array.from(document.querySelectorAll(".difficulty-strip span"));
-  const passportStamps = Array.from(document.querySelectorAll("[data-passport]"));
-  const resultPassportStamps = Array.from(document.querySelectorAll("[data-result-passport]"));
-  const seasonOrder = ["spring", "summer", "autumn", "winter"];
-  const challenge = EXPERIENCE.getChallenge();
+  const els = {
+    entry:$("entryScreen"), game:$("gameScreen"),
+    nicknameInput:$("nicknameInput"), nicknameError:$("nicknameError"), startButton:$("startButton"),
+    weekLabelEntry:$("weekLabelEntry"), nicknameButton:$("nicknameButton"), nicknameDisplay:$("nicknameDisplay"),
+    pauseButton:$("pauseButton"), score:$("scoreValue"), personalBest:$("personalBestValue"),
+    nextPreview:$("nextPreview"), canvas:$("gameCanvas"), boardWrap:document.querySelector(".board-wrap"),
+    dropGuide:$("dropGuide"), connectionPill:$("connectionPill"), connectionText:$("connectionText"),
+    myRank:$("myRankValue"), weekLabel:$("weekLabel"), topScore:$("topScoreValue"),
+    recipeButton:$("recipeButton"), rankingButton:$("rankingButton"),
+    resultOverlay:$("resultOverlay"), resultScore:$("resultScore"), resultBest:$("resultBest"),
+    resultRank:$("resultRank"), resultMenuThumb:$("resultMenuThumb"), resultMenuName:$("resultMenuName"),
+    restartButton:$("restartButton"), pauseOverlay:$("pauseOverlay"), resumeButton:$("resumeButton"),
+    nicknameOverlay:$("nicknameOverlay"), nicknameEditInput:$("nicknameEditInput"), nicknameEditError:$("nicknameEditError"),
+    saveNicknameButton:$("saveNicknameButton"), recipeOverlay:$("recipeOverlay"), recipeList:$("recipeList"),
+    rankingOverlay:$("rankingOverlay"), rankingStatus:$("rankingStatus"), rankingList:$("rankingList")
+  };
 
-  let currentSeasonId = challenge?.seasonId || getSeasonFromMonth();
-  let currentSeason = CONFIG.seasons[currentSeasonId];
-  let currentPlayMode = "solo";
-  let hapticsEnabled = CONFIG.hapticsDefault;
-  let raf = 0;
-  let gameRunning = false;
-  let startedAt = 0;
-  let lastFrame = 0;
-  let elapsed = 0;
-  let phase = 0;
-  let rise = 0;
-  let score = 0;
-  let combo = 0;
-  let maxCombo = 0;
-  let perfectCount = 0;
-  let tapCount = 0;
-  let lastTapAt = 0;
-  let currentDifficultyIndex = -1;
-  let currentWindow = null;
-  let currentProcessStep = -1;
-  let currentPlayId = "";
-  let lastSubmit = null;
+  const ctx = els.canvas.getContext("2d");
+  const engine = Engine.create();
+  engine.gravity.y = CONFIG.physics.gravity;
+  const world = engine.world;
+  const W = CONFIG.physics.width;
+  const H = CONFIG.physics.height;
+  const wallOpt = { isStatic:true, friction:.32, restitution:.04, label:"wall" };
 
-  const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
-  const track = (event, meta = {}) => ANALYTICS?.track?.(event, { season: currentSeasonId, mode: currentPlayMode, ...meta });
+  Composite.add(world, [
+    Bodies.rectangle(-28, H / 2, 56, H * 3, wallOpt),
+    Bodies.rectangle(W + 28, H / 2, 56, H * 3, wallOpt),
+    Bodies.rectangle(W / 2, H + 24, W + 100, 48, wallOpt)
+  ]);
 
-  function getSeasonFromMonth() {
-    const month = new Date().getMonth();
-    if ([2,3,4].includes(month)) return "spring";
-    if ([5,6,7].includes(month)) return "summer";
-    if ([8,9,10].includes(month)) return "autumn";
-    return "winter";
+  let renderScale = 1;
+  let dpr = 1;
+  let lastFrame = performance.now();
+  let accumulator = 0;
+  const STEP = 1000 / 60;
+  const mergeQueue = [];
+  const fx = [];
+
+  function track(event, meta = {}) {
+    ANALYTICS?.track?.(event, { gameId:state.gameId, score:state.score, ...meta });
   }
 
-  function showScreen(name) {
-    Object.values(screens).forEach((screen) => screen.classList.remove("active"));
-    screens[name].classList.add("active");
-    window.scrollTo({ top: 0, behavior: "smooth" });
+  function imageUrl(menu) {
+    return encodeURI(`${CONFIG.assets.base}${menu.file}`);
   }
 
-  function vibrate(pattern = 10) {
-    if (!hapticsEnabled || !navigator.vibrate) return;
-    navigator.vibrate(pattern);
+  function loadAssets() {
+    menus.forEach(menu => {
+      const img = new Image();
+      img.decoding = "async";
+      img.onload = () => { menu.image = img; menu.imageFailed = false; };
+      img.onerror = () => { menu.imageFailed = true; };
+      img.src = imageUrl(menu);
+    });
   }
 
-  function setStatusChip(element, connected) {
-    if (!element) return;
-    element.classList.toggle("live", connected);
-    element.innerHTML = `<i></i>${connected ? CONFIG.store.liveLabel : CONFIG.store.previewLabel}`;
+  function menuThumb(target, level, size = 48) {
+    const menu = menus[level];
+    target.innerHTML = "";
+    target.className = target.className.includes("mini-dessert") ? "mini-dessert" : "next-preview";
+    target.style.width = `${size}px`;
+    target.style.height = `${size}px`;
+    const img = document.createElement("img");
+    img.src = imageUrl(menu);
+    img.alt = menu.name;
+    img.onload = () => {};
+    img.onerror = () => {
+      img.remove();
+      const fallback = document.createElement("div");
+      fallback.className = "menu-fallback";
+      fallback.style.background = menu.tone;
+      fallback.textContent = menu.fallback;
+      target.appendChild(fallback);
+    };
+    target.appendChild(img);
   }
 
-  function renderMiniRanking(top = []) {
-    if (!top.length) {
-      els.introTop.innerHTML = "<p>첫 기록이 오늘의 기준이 됩니다.</p>";
+  function createInlineThumb(level) {
+    const el = document.createElement("div");
+    el.className = "thumb menu-sprite";
+    const menu = menus[level];
+    const img = document.createElement("img");
+    img.src = imageUrl(menu);
+    img.alt = "";
+    img.onerror = () => {
+      img.remove();
+      const f = document.createElement("div");
+      f.className = "menu-fallback";
+      f.style.background = menu.tone;
+      f.textContent = menu.fallback;
+      el.appendChild(f);
+    };
+    el.appendChild(img);
+    return el;
+  }
+
+  function showGameScreen() {
+    els.entry.classList.remove("active");
+    els.game.classList.add("active");
+    requestAnimationFrame(resizeCanvas);
+  }
+
+  function showEntryScreen() {
+    els.game.classList.remove("active");
+    els.entry.classList.add("active");
+  }
+
+  function openLayer(el, pauseReason) {
+    if (el.classList.contains("sheet")) el.classList.add("show");
+    else el.classList.add("show");
+    el.setAttribute("aria-hidden", "false");
+    if (pauseReason) addPause(pauseReason);
+  }
+
+  function closeLayer(el, pauseReason) {
+    el.classList.remove("show");
+    el.setAttribute("aria-hidden", "true");
+    if (pauseReason) removePause(pauseReason);
+  }
+
+  function addPause(reason) {
+    state.pauseReasons.add(reason);
+    if (state.gameStarted && !state.gameOver) {
+      els.pauseButton.textContent = "▶";
+    }
+  }
+
+  function removePause(reason) {
+    state.pauseReasons.delete(reason);
+    if (state.pauseReasons.size === 0 && state.gameStarted && !state.gameOver) {
+      els.pauseButton.textContent = "Ⅱ";
+      lastFrame = performance.now();
+    }
+  }
+
+  function isPaused() {
+    return state.pauseReasons.size > 0;
+  }
+
+  function resizeCanvas() {
+    const rect = els.boardWrap.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+    renderScale = Math.min(rect.width / W, rect.height / H);
+    dpr = Math.min(window.devicePixelRatio || 1, 3);
+    const cssW = Math.floor(W * renderScale);
+    const cssH = Math.floor(H * renderScale);
+    els.canvas.style.width = `${cssW}px`;
+    els.canvas.style.height = `${cssH}px`;
+    els.canvas.style.margin = "0 auto";
+    els.canvas.width = Math.max(1, Math.floor(cssW * dpr));
+    els.canvas.height = Math.max(1, Math.floor(cssH * dpr));
+  }
+
+  window.addEventListener("resize", resizeCanvas);
+
+  function randomDropLevel() {
+    return Math.floor(Math.random() * CONFIG.gameplay.droppableLevels);
+  }
+
+  function isItem(body) {
+    return body.plugin && Number.isInteger(body.plugin.level);
+  }
+
+  function createBody(level, x, y) {
+    const menu = menus[level];
+    const body = Bodies.circle(x, y, menu.radius, {
+      restitution:CONFIG.physics.restitution,
+      friction:CONFIG.physics.friction,
+      frictionStatic:CONFIG.physics.frictionStatic,
+      density:CONFIG.physics.density,
+      label:`menu-${level + 1}`
+    });
+    body.plugin = {
+      level,
+      bornAt:performance.now(),
+      merging:false,
+      bodyId:crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`
+    };
+    Composite.add(world, body);
+    return body;
+  }
+
+  function clearItems() {
+    Composite.allBodies(world).filter(isItem).forEach(body => Composite.remove(world, body));
+    mergeQueue.length = 0;
+    fx.length = 0;
+  }
+
+  function clampDropX(x) {
+    const radius = menus[state.currentLevel].radius;
+    return Math.max(radius + 2, Math.min(W - radius - 2, x));
+  }
+
+  function updateScore(value) {
+    state.score = Math.max(0, Math.round(value));
+    els.score.textContent = state.score.toLocaleString("ko-KR");
+  }
+
+  function updateNextPreview() {
+    menuThumb(els.nextPreview, state.nextLevel, 48);
+  }
+
+  function updateRankUi(snapshot = state.lastLeaderboard) {
+    if (!snapshot) return;
+    state.lastLeaderboard = snapshot;
+    state.best = Math.max(state.best, Number(snapshot.myBest || 0));
+    els.personalBest.textContent = state.best.toLocaleString("ko-KR");
+    els.myRank.textContent = snapshot.myRank ? `#${snapshot.myRank}` : "–";
+    els.topScore.textContent = Number(snapshot.topScore || 0).toLocaleString("ko-KR");
+    els.weekLabel.textContent = snapshot.weekLabel || EXP.getWeekLabel();
+    els.weekLabelEntry.textContent = `이번 주 · ${snapshot.weekLabel || EXP.getWeekLabel()}`;
+
+    els.connectionPill.classList.remove("is-live", "is-local", "is-offline");
+    if (snapshot.connected) {
+      els.connectionPill.classList.add("is-live");
+      els.connectionText.textContent = "LIVE";
+    } else if (CONFIG.store.leaderboardApi) {
+      els.connectionPill.classList.add("is-offline");
+      els.connectionText.textContent = "OFFLINE";
+    } else {
+      els.connectionPill.classList.add("is-local");
+      els.connectionText.textContent = "LOCAL";
+    }
+  }
+
+  function renderRecipe() {
+    els.recipeList.innerHTML = "";
+    menus.forEach((menu, index) => {
+      const row = document.createElement("div");
+      row.className = `recipe-row${index <= state.maxLevel ? " reached" : ""}`;
+      const num = document.createElement("span");
+      num.className = "num";
+      num.textContent = String(index + 1).padStart(2, "0");
+      row.appendChild(num);
+      row.appendChild(createInlineThumb(index));
+      const text = document.createElement("div");
+      text.innerHTML = `<strong>${menu.name}</strong><br><small>${index === 0 ? "START" : `+${menu.points}`}</small>`;
+      row.appendChild(text);
+      const arrow = document.createElement("small");
+      arrow.textContent = index === menus.length - 1 ? "★" : "→";
+      row.appendChild(arrow);
+      els.recipeList.appendChild(row);
+    });
+  }
+
+  function renderRanking(snapshot) {
+    updateRankUi(snapshot);
+    els.rankingStatus.textContent = snapshot.connected
+      ? `실시간 · ${snapshot.weekLabel}`
+      : CONFIG.store.leaderboardApi
+        ? "연결이 끊겨 내 기기 기록을 표시해요."
+        : "서버 연결 전 · 내 기기 미리보기";
+    els.rankingList.innerHTML = "";
+    const rows = snapshot.rows || [];
+    if (!rows.length) {
+      const empty = document.createElement("div");
+      empty.className = "ranking-status";
+      empty.textContent = "아직 기록이 없어요.";
+      els.rankingList.appendChild(empty);
       return;
     }
-    els.introTop.innerHTML = top.slice(0,3).map((item, index) => `
-      <div class="mini-rank-row">
-        <span>0${index + 1}</span><strong>${escapeHtml(item.label || `PLAYER ${index + 1}`)}</strong><b>${Number(item.score || 0).toLocaleString("ko-KR")}</b>
-      </div>`).join("");
-  }
-
-  function renderStoreRanking(snapshot) {
-    setStatusChip(els.resultBoardStatus, snapshot.connected);
-    if (!snapshot.top?.length) {
-      els.storeRanking.innerHTML = '<p class="ranking-empty">아직 기록이 없어요. 첫 기록을 만들어보세요.</p>';
-    } else {
-      els.storeRanking.innerHTML = snapshot.top.slice(0,5).map((item, index) => `
-        <div class="store-rank-row ${item.mine ? "mine" : ""}">
-          <span class="rank-number">${String(item.rank || index + 1).padStart(2,"0")}</span>
-          <div class="rank-name"><strong>${escapeHtml(item.label || `PLAYER ${index + 1}`)}</strong><small>${snapshot.connected ? "TODAY · STORE" : "THIS DEVICE"}</small></div>
-          <span class="rank-points">${Number(item.score || 0).toLocaleString("ko-KR")}</span>
-        </div>`).join("");
-    }
-    els.resultRank.textContent = snapshot.rank ? `#${snapshot.rank}` : "—";
-    const topScore = Number(snapshot.dailyBest || 0);
-    const gap = Math.max(0, topScore - score);
-    els.rankGap.textContent = snapshot.rank === 1 && score > 0 ? "지금 이 기록이 기준입니다." : gap > 0 ? `${gap.toLocaleString("ko-KR")}점 더 올리면 TOP RECORD` : "첫 기록이 기준이 됩니다.";
-  }
-
-  async function refreshBoard(snapshot = null) {
-    const board = snapshot || await LEADERBOARD.getSnapshot(currentSeasonId);
-    setStatusChip(els.leaderboardStatus, board.connected);
-    els.introStoreBest.textContent = Number(board.dailyBest || 0).toLocaleString("ko-KR");
-    els.introRank.textContent = board.rank ? `#${board.rank}` : "—";
-    els.introBest.textContent = Number(board.localDaily ?? board.dailyBest ?? 0).toLocaleString("ko-KR");
-    renderMiniRanking(board.top || []);
-    els.boardDisclosure.textContent = board.connected ? "현재 매장 전체 기록과 연결되어 있습니다." : "LOCAL PREVIEW · 매장 전체 실시간 순위는 서버 연결 후 활성화됩니다.";
-    renderStoreRanking(board);
-    return board;
-  }
-
-  function renderPassport(passport = EXPERIENCE.getPassport()) {
-    els.passportCount.textContent = `${passport.count} / ${passport.total}`;
-    els.resultPassportCount.textContent = `${passport.count} / ${passport.total}`;
-    const copy = passport.complete ? CONFIG.passport.completionCopy : CONFIG.passport.copy;
-    els.passportCopy.textContent = copy;
-    els.resultPassportTitle.textContent = passport.complete ? "네 계절의 RISE를 완성했어요." : `${passport.count}개의 계절을 기록했어요.`;
-    els.resultPassportCopy.textContent = passport.complete ? CONFIG.passport.completionCopy : "다음 계절의 RISE도 만나보세요.";
-    passportStamps.forEach((stamp) => stamp.classList.toggle("collected", Boolean(passport.entries[stamp.dataset.passport])));
-    resultPassportStamps.forEach((stamp) => stamp.classList.toggle("collected", Boolean(passport.entries[stamp.dataset.resultPassport])));
-  }
-
-  function renderChallengeIntro() {
-    if (!challenge) return;
-    els.challengeBanner.classList.remove("hidden");
-    els.challengeTarget.textContent = challenge.target.toLocaleString("ko-KR");
-    els.gameChallenge.classList.remove("hidden");
-    els.gameChallengeTarget.textContent = challenge.target.toLocaleString("ko-KR");
-  }
-
-  function renderChallengeOutcome() {
-    if (!challenge) {
-      els.challengeOutcome.classList.add("hidden");
-      return;
-    }
-    const cleared = score > challenge.target;
-    els.challengeOutcome.classList.remove("hidden");
-    els.challengeOutcomeTitle.textContent = cleared ? "CHALLENGE CLEARED" : "ONE MORE RISE";
-    els.challengeOutcomeCopy.textContent = cleared
-      ? `${(score - challenge.target).toLocaleString("ko-KR")}점 차이로 친구의 기록을 넘었어요. 이제 새로운 기록을 보내보세요.`
-      : `${(challenge.target - score).toLocaleString("ko-KR")}점만 더 올리면 친구의 기록을 넘을 수 있어요.`;
-    track(cleared ? "challenge_cleared" : "challenge_failed", { target: challenge.target, score });
-  }
-
-  async function applySeason(seasonId, { updateBoard = true, trackSelection = false } = {}) {
-    currentSeasonId = seasonId;
-    currentSeason = CONFIG.seasons[seasonId];
-    const seasonNumber = String(seasonOrder.indexOf(seasonId) + 1).padStart(2,"0");
-    document.body.dataset.season = seasonId;
-    document.querySelector('meta[name="theme-color"]')?.setAttribute("content", currentSeason.surface);
-    els.seasonIndex.textContent = currentSeason.campaign || `SEASON ${seasonNumber}`;
-    els.seasonLabel.textContent = `${currentSeason.label} · ${currentSeason.note}`;
-    els.seasonCampaign.textContent = currentSeason.campaign;
-    els.seasonMode.textContent = currentSeason.note;
-    els.seasonStoryHeadline.textContent = currentSeason.storyHeadline;
-    els.seasonStoryBody.textContent = currentSeason.storyBody;
-    els.gameSeason.textContent = currentSeason.label;
-    els.gameMode.textContent = currentSeason.note;
-    els.resultSeason.textContent = `${currentSeason.label} · ${currentSeason.note}`;
-    els.shareSeason.textContent = currentSeason.shareTag;
-    els.shareCopy.textContent = CONFIG.brand.campaignLine;
-    els.productSeason.textContent = currentSeason.campaign;
-    els.productLabel.textContent = currentSeason.productLabel;
-    els.productName.textContent = currentSeason.productName;
-    els.productCopy.textContent = currentSeason.productCopy;
-    els.storyPanelTitle.textContent = currentSeason.storyHeadline;
-    els.storyPanelBody.textContent = currentSeason.storyBody;
-    els.tasteTip.textContent = currentSeason.tip;
-    els.seasonStoryPanel.classList.add("hidden");
-    seasonButtons.forEach((button) => button.classList.toggle("active", button.dataset.season === seasonId));
-    if (updateBoard) await refreshBoard();
-    renderPassport();
-    if (trackSelection) track("season_select", { selectedSeason: seasonId });
-  }
-
-  function setPlayMode(mode, { trackSelection = false } = {}) {
-    currentPlayMode = mode;
-    modeButtons.forEach((button) => button.classList.toggle("active", button.dataset.mode === mode));
-    if (mode === "table") {
-      els.modeDescription.textContent = "한 테이블에서 번갈아 플레이하고, 오늘의 RISE MASTER를 정해보세요.";
-      els.startBtn.querySelector("span").textContent = "START TABLE CHALLENGE";
-    } else {
-      els.modeDescription.textContent = challenge ? `${challenge.target.toLocaleString("ko-KR")}점 기록에 도전 중입니다.` : "한 번 더 할수록 좋은 순간이 보입니다.";
-      els.startBtn.querySelector("span").textContent = challenge ? "BEAT THE RECORD" : "PLAY RISE";
-    }
-    if (trackSelection) track("play_mode_select", { selectedMode: mode });
-  }
-
-  function getDifficulty(time) {
-    const index = CONFIG.difficulty.findIndex((item) => time >= item.start && time < item.end);
-    const resolvedIndex = index === -1 ? CONFIG.difficulty.length - 1 : index;
-    return { stage: CONFIG.difficulty[resolvedIndex], index: resolvedIndex };
-  }
-
-  function getTimingWindow(stage) {
-    const halfAdjust = currentSeason.perfectExpand / 2;
-    const perfectMin = clamp(stage.perfectMin - halfAdjust, .50, .90);
-    const perfectMax = clamp(stage.perfectMax + halfAdjust, perfectMin + .035, .98);
-    return { perfectMin, perfectMax, greatMin: clamp(perfectMin - .105,.40,perfectMin-.02), greatMax: clamp(perfectMax + .075,perfectMax+.02,.995) };
-  }
-
-  function getRhythmModifier() {
-    if (currentSeason.rhythm === "quick") return 1 + .055 * Math.sin(elapsed * 2.4);
-    if (currentSeason.rhythm === "swing") return 1 + .15 * Math.sin(elapsed * 1.75) + .045 * Math.sin(elapsed * 3.8);
-    if (currentSeason.rhythm === "precise") return 1 + .035 * Math.sin(elapsed * 2.1);
-    return 1 + .018 * Math.sin(elapsed * 1.2);
-  }
-
-  function setDifficultyUI(index, stage) {
-    if (index === currentDifficultyIndex) return;
-    currentDifficultyIndex = index;
-    els.phasePill.textContent = stage.id;
-    els.meterMode.textContent = stage.id === "FINAL RISE" ? "FINAL" : stage.id;
-    difficultyItems.forEach((item, itemIndex) => item.classList.toggle("active", itemIndex === index));
-    if (stage.id === "FINAL RISE") vibrate([12,25,12]);
-  }
-
-  function updateMeterWindow(window) {
-    els.greatZone.style.left = `${window.greatMin * 100}%`;
-    els.greatZone.style.width = `${(window.greatMax - window.greatMin) * 100}%`;
-    els.perfectZone.style.left = `${window.perfectMin * 100}%`;
-    els.perfectZone.style.width = `${(window.perfectMax - window.perfectMin) * 100}%`;
-  }
-
-  function renderRise(value, window = currentWindow) {
-    const scaleY = .68 + value * .78;
-    const scaleX = .955 + value * .075;
-    els.souffle.style.transform = `scale(${scaleX}, ${scaleY})`;
-    els.meterNeedle.style.left = `${clamp(value * 100,0,100)}%`;
-    els.souffle.style.filter = window && value >= window.perfectMin && value <= window.perfectMax ? "saturate(1.06) brightness(1.045)" : "none";
-  }
-
-  function updateProcess() {
-    let step = 0;
-    if (elapsed >= 17) step = 2;
-    else if (elapsed >= 8) step = 1;
-    if (step === currentProcessStep) return;
-    currentProcessStep = step;
-    const labels = ["01 / MERINGUE","02 / RISE","03 / SEASON"];
-    els.processStep.textContent = labels[step];
-    els.processLabel.textContent = currentSeason.process[step];
-    els.brandLine.textContent = currentSeason.brandLines[step] || CONFIG.brand.waitingCopy[step];
-  }
-
-  function resetGame() {
-    cancelAnimationFrame(raf);
-    gameRunning = false;
-    elapsed = 0; phase = 0; rise = 0; score = 0; combo = 0; maxCombo = 0; perfectCount = 0; tapCount = 0; lastTapAt = 0;
-    currentDifficultyIndex = -1; currentProcessStep = -1;
-    currentWindow = getTimingWindow(CONFIG.difficulty[0]);
-    currentPlayId = `${EXPERIENCE.getSessionId()}_${Date.now().toString(36)}`;
-    els.timeValue.textContent = CONFIG.gameSeconds.toFixed(1);
-    els.scoreValue.textContent = "0"; els.comboValue.textContent = "×0"; els.perfectValue.textContent = "0";
-    difficultyItems.forEach((item,index) => item.classList.toggle("active", index === 0));
-    updateMeterWindow(currentWindow); renderRise(0,currentWindow); updateProcess();
-  }
-
-  function startGame() {
-    resetGame(); showScreen("game"); gameRunning = true; startedAt = performance.now(); lastFrame = startedAt;
-    track("game_start", { challengeTarget: challenge?.target || null, playId: currentPlayId });
-    raf = requestAnimationFrame(loop);
-  }
-
-  function loop(now) {
-    if (!gameRunning) return;
-    const dt = Math.min((now - lastFrame) / 1000,.04);
-    lastFrame = now; elapsed = (now - startedAt) / 1000;
-    const remaining = Math.max(0,CONFIG.gameSeconds - elapsed);
-    els.timeValue.textContent = remaining.toFixed(1);
-    const { stage,index } = getDifficulty(elapsed);
-    setDifficultyUI(index,stage); currentWindow = getTimingWindow(stage); updateMeterWindow(currentWindow); updateProcess();
-    const skillPressure = 1 + Math.min(combo,12) * .006;
-    const speed = stage.speed * currentSeason.speedFactor * getRhythmModifier() * skillPressure;
-    phase += dt * speed;
-    const sine = (Math.sin(phase - Math.PI / 2) + 1) / 2;
-    rise = Math.pow(sine,.84); renderRise(rise,currentWindow);
-    if (remaining <= 0) return finishGame();
-    raf = requestAnimationFrame(loop);
-  }
-
-  function showFeedback(text,type) {
-    els.feedback.textContent = text;
-    els.feedback.style.color = type === "perfect" ? "var(--deep)" : type === "great" ? "var(--accent)" : "var(--muted)";
-    els.feedback.classList.remove("show"); void els.feedback.offsetWidth; els.feedback.classList.add("show");
-  }
-
-  function showSeasonBonus(points) {
-    els.fruitBonus.classList.remove("show"); void els.fruitBonus.offsetWidth; els.fruitBonus.classList.add("show");
-    els.bonusToast.textContent = `${currentSeason.bonusCopy} +${points}`;
-    els.bonusToast.classList.remove("show"); void els.bonusToast.offsetWidth; els.bonusToast.classList.add("show");
-  }
-
-  function handleTap() {
-    if (!gameRunning) return;
-    const now = performance.now(); if (now - lastTapAt < 220) return;
-    lastTapAt = now; tapCount += 1;
-    const { stage } = getDifficulty(elapsed);
-    const window = currentWindow || getTimingWindow(stage);
-    let points = 0; let type = "miss"; let label = "EARLY";
-    if (rise >= window.perfectMin && rise <= window.perfectMax) {
-      combo += 1; maxCombo = Math.max(maxCombo,combo); perfectCount += 1;
-      const comboMultiplier = 1 + Math.min(combo - 1,12) * .095;
-      points = Math.round(145 * stage.multiplier * currentSeason.scoreFactor * comboMultiplier);
-      type = "perfect"; label = combo >= 3 ? `PERFECT ×${combo}` : "PERFECT"; vibrate([8,18,8]);
-      if (combo > 0 && combo % currentSeason.bonusEvery === 0) {
-        const bonus = Math.round(currentSeason.bonusPoints * stage.multiplier); points += bonus; showSeasonBonus(bonus);
-      }
-    } else if (rise >= window.greatMin && rise <= window.greatMax) {
-      combo = 0; points = Math.round(62 * stage.multiplier * currentSeason.scoreFactor); type = "great"; label = "SOFT"; vibrate(9);
-    } else {
-      combo = 0; score = Math.max(0,score - Math.round(36 * stage.multiplier));
-      label = Math.cos(phase - Math.PI / 2) >= 0 ? "EARLY" : "LATE"; vibrate(18);
-    }
-    score += points;
-    els.scoreValue.textContent = score.toLocaleString("ko-KR"); els.comboValue.textContent = `×${combo}`; els.perfectValue.textContent = String(perfectCount);
-    showFeedback(label,type); phase = 0; rise = 0; renderRise(0,window);
-  }
-
-  function getResultCopy(value,comboValue,rate) {
-    if (value >= 4300 || comboValue >= 10 || rate >= 72) return { badge:"CAFFIEND RISE MASTER", message:"좋은 순간을 정확히 기다릴 줄 아는 사람. 오늘의 디저트도 가장 좋은 순간을 향해 가고 있어요." };
-    if (value >= 3000 || comboValue >= 7 || rate >= 55) return { badge:"TIMING ARTISAN", message:"기다림의 리듬을 찾았어요. 한 번 더 도전하면 오늘의 기록이 달라질 수 있어요." };
-    if (value >= 1800 || rate >= 35) return { badge:"SOFT MOMENT", message:"서두르지 않아도 괜찮아요. 카피엔드의 기다림은 조금씩 더 좋은 순간으로 이어집니다." };
-    return { badge:"FIRST RISE", message:"첫 번째 좋은 순간을 찾았어요. 다음 한 번은 분명 더 폭신할 거예요." };
-  }
-
-  async function renderTable(snapshot) {
-    if (currentPlayMode !== "table") { els.tablePanel.classList.add("hidden"); return; }
-    els.tablePanel.classList.remove("hidden");
-    els.tableCount.textContent = `${snapshot.count} PLAYER${snapshot.count === 1 ? "" : "S"}`;
-    els.tableRanking.innerHTML = snapshot.scores.slice(0,4).map((entry,index) => `
-      <div class="rank-row"><span class="rank-no">0${index + 1}</span><div class="rank-player"><strong>PLAYER ${entry.playerNumber}</strong><small>${entry.seasonId.toUpperCase()} RISE</small></div><span class="rank-score">${entry.score.toLocaleString("ko-KR")}</span></div>`).join("");
-  }
-
-  function renderReward(submit) {
-    const eligible = CONFIG.reward.enabled && submit.isDailyRecord && score >= CONFIG.reward.minimumScore;
-    if (!eligible) { els.rewardNotice.classList.add("hidden"); return; }
-    els.rewardNotice.classList.remove("hidden");
-    els.rewardEyebrow.textContent = submit.connected && submit.reward ? "VERIFIED RECORD REWARD" : `${CONFIG.reward.title} · PROTOTYPE`;
-    els.rewardHeadline.textContent = submit.connected && submit.reward?.headline ? submit.reward.headline : CONFIG.reward.headline;
-    els.rewardBody.textContent = submit.connected && submit.reward?.body ? submit.reward.body : `${CONFIG.reward.body} ${CONFIG.reward.pendingCopy}`;
-    if (!submit.connected) LEADERBOARD.markPrototypeRewardShown(currentSeasonId);
-    vibrate([16,35,16,35,26]);
-  }
-
-  async function finishGame() {
-    if (!gameRunning) return;
-    gameRunning = false; cancelAnimationFrame(raf);
-    const perfectRate = tapCount > 0 ? Math.round((perfectCount / tapCount) * 100) : 0;
-    const result = getResultCopy(score,maxCombo,perfectRate);
-    const metrics = { maxCombo, perfectRate, perfectCount, tapCount, duration: Math.min(elapsed,CONFIG.gameSeconds) };
-    const submit = await LEADERBOARD.submitScore({ seasonId: currentSeasonId, score, metrics, playId: currentPlayId });
-    lastSubmit = submit;
-    const passport = EXPERIENCE.stampSeason(currentSeasonId,score);
-
-    els.finalScore.textContent = score.toLocaleString("ko-KR");
-    els.maxComboValue.textContent = `×${maxCombo}`; els.perfectRateValue.textContent = `${perfectRate}%`; els.bestScore.textContent = Number(submit.dailyBest || score).toLocaleString("ko-KR");
-    els.resultBadge.textContent = result.badge; els.resultMessage.textContent = result.message;
-    els.resultDate.textContent = new Date().toLocaleDateString("en-US",{day:"2-digit",month:"short"}).toUpperCase(); els.tasteTip.textContent = currentSeason.tip;
-    renderChallengeOutcome(); renderReward(submit); renderPassport(passport); renderStoreRanking(submit);
-
-    if (currentPlayMode === "table") {
-      const table = await LEADERBOARD.addTableScore({ seasonId: currentSeasonId, score }); await renderTable(table); track("table_player_complete",{score,player:table.count});
-    } else els.tablePanel.classList.add("hidden");
-
-    await refreshBoard({ ...submit, localDaily: Math.max(Number(els.introBest.textContent.replace(/,/g,"")) || 0, score) });
-    if (submit.isDailyRecord) track(submit.connected ? "new_store_record" : "new_local_record",{score});
-    track("game_complete",{score,maxCombo,perfectRate,newRecord:submit.isDailyRecord,connected:submit.connected,passportCount:passport.count});
-    showScreen("result");
-  }
-
-  function openSeasonStory() {
-    els.seasonStoryPanel.classList.toggle("hidden");
-    const open = !els.seasonStoryPanel.classList.contains("hidden");
-    els.seasonCta.innerHTML = open ? '시즌 스토리 닫기 <span>×</span>' : '이번 시즌 경험 보기 <span>↗</span>';
-    if (open) track("season_story_open");
-  }
-
-  function resultBadgeSafe() { return els.resultBadge?.textContent || "CAFFIEND RISE"; }
-
-  function drawShareCanvas() {
-    const canvas = document.createElement("canvas"); canvas.width = 1080; canvas.height = 1920;
-    const ctx = canvas.getContext("2d");
-    ctx.fillStyle = currentSeason.deep; ctx.fillRect(0,0,1080,1920);
-    ctx.globalAlpha = .72; ctx.fillStyle = currentSeason.accent; ctx.beginPath(); ctx.arc(970,130,260,0,Math.PI*2); ctx.fill();
-    ctx.globalAlpha = .16; ctx.strokeStyle = "#fff"; ctx.lineWidth = 2; [250,340,430].forEach((r) => { ctx.beginPath(); ctx.arc(930,180,r,0,Math.PI*2); ctx.stroke(); });
-    ctx.globalAlpha = 1; ctx.fillStyle = "#fff"; ctx.font = "700 34px Arial"; ctx.fillText("CAFFIEND MOMENTS",86,118);
-    ctx.globalAlpha = .62; ctx.font = "700 25px Arial"; ctx.fillText(currentSeason.shareTag,86,170);
-    ctx.globalAlpha = 1; ctx.textAlign = "center"; ctx.font = "500 210px Georgia"; ctx.fillText(score.toLocaleString("en-US"),540,910);
-    ctx.globalAlpha = .55; ctx.font = "700 28px Arial"; ctx.fillText("POINTS",540,970);
-    ctx.globalAlpha = 1; ctx.font = "700 43px Arial"; ctx.fillText(CONFIG.brand.campaignLine,540,1150);
-    ctx.globalAlpha = .7; ctx.font = "400 30px Arial"; ctx.fillText(resultBadgeSafe(),540,1220);
-    ctx.textAlign = "left"; ctx.globalAlpha = .55; ctx.font = "700 25px Arial"; ctx.fillText(new Date().toLocaleDateString("en-US",{day:"2-digit",month:"short",year:"numeric"}).toUpperCase(),86,1770);
-    ctx.textAlign = "right"; ctx.globalAlpha = 1; ctx.font = "700 34px Arial"; ctx.fillText(CONFIG.brand.sharePrompt,994,1770);
-    return canvas;
-  }
-
-  async function canvasToFile(canvas) {
-    return new Promise((resolve) => canvas.toBlob((blob) => resolve(blob ? new File([blob],"caffiend-rise.png",{type:"image/png"}) : null),"image/png",.94));
-  }
-
-  async function shareResultCard() {
-    const text = `${currentSeason.shareTag} · ${score.toLocaleString("ko-KR")}점\n${CONFIG.brand.campaignLine}\n${CONFIG.brand.sharePrompt}`;
-    try {
-      const file = await canvasToFile(drawShareCanvas());
-      if (file && navigator.share && navigator.canShare?.({files:[file]})) await navigator.share({title:"CAFFIEND MOMENTS",text,files:[file]});
-      else if (navigator.share) await navigator.share({title:"CAFFIEND MOMENTS",text,url:location.href});
-      else if (navigator.clipboard) { await navigator.clipboard.writeText(`${text}\n${location.href}`); els.shareBtn.textContent = "기록이 복사됐어요"; setTimeout(() => els.shareBtn.textContent = "결과 카드 공유",1600); }
-      track("result_share",{score});
-    } catch (error) { console.debug("Share cancelled or unavailable",error); }
-  }
-
-  async function shareChallenge() {
-    const url = EXPERIENCE.buildChallengeUrl({score,seasonId:currentSeasonId});
-    const text = `내 CAFFIEND RISE 기록은 ${score.toLocaleString("ko-KR")}점.\n${CONFIG.brand.sharePrompt} ${currentSeason.shareTag}`;
-    try {
-      if (navigator.share) await navigator.share({title:"CAFFIEND RISE CHALLENGE",text,url});
-      else if (navigator.clipboard) { await navigator.clipboard.writeText(`${text}\n${url}`); els.challengeShareBtn.textContent = "도전 링크 복사 완료"; setTimeout(() => els.challengeShareBtn.textContent = "친구에게 도전 보내기",1600); }
-      track("challenge_share",{score,target:score});
-    } catch (error) { console.debug("Challenge share cancelled",error); }
+    rows.forEach(row => {
+      const item = document.createElement("div");
+      item.className = `ranking-row${row.mine ? " mine" : ""}`;
+      item.innerHTML = `<span class="rank">#${row.rank}</span><span class="name">${escapeHtml(row.nickname)}${row.mine ? " · 나" : ""}</span><span class="points">${Number(row.score).toLocaleString("ko-KR")}</span>`;
+      els.rankingList.appendChild(item);
+    });
   }
 
   function escapeHtml(value) {
-    return String(value ?? "").replace(/[&<>'"]/g,(char) => ({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[char]));
+    return String(value).replace(/[&<>"']/g, c => ({
+      "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#039;"
+    }[c]));
   }
 
-  seasonButtons.forEach((button) => button.addEventListener("click",() => applySeason(button.dataset.season,{trackSelection:true})));
-  modeButtons.forEach((button) => button.addEventListener("click",() => setPlayMode(button.dataset.mode,{trackSelection:true})));
-  els.soundBtn.addEventListener("click",() => { hapticsEnabled = !hapticsEnabled; els.hapticText.textContent = hapticsEnabled ? "HAPTIC ON" : "HAPTIC OFF"; els.soundBtn.querySelector(".utility-dot").style.opacity = hapticsEnabled ? "1" : ".25"; });
-  els.startBtn.addEventListener("click",startGame); els.retryBtn.addEventListener("click",startGame); els.nextPlayerBtn.addEventListener("click",startGame);
-  els.gameStage.addEventListener("click",handleTap); els.tapBtn.addEventListener("click",handleTap); els.seasonCta.addEventListener("click",openSeasonStory);
-  els.shareBtn.addEventListener("click",shareResultCard); els.challengeShareBtn.addEventListener("click",shareChallenge);
-  document.addEventListener("visibilitychange",() => { if (document.hidden && gameRunning) finishGame(); });
+  async function refreshLeaderboard(force = false) {
+    const now = performance.now();
+    if (!force && now - state.lastRankRefreshAt < CONFIG.ranking.refreshMs) return;
+    state.lastRankRefreshAt = now;
+    const snapshot = await BOARD.getLeaderboard();
+    renderRanking(snapshot);
+  }
 
-  renderChallengeIntro();
-  renderPassport();
-  setPlayMode("solo");
-  applySeason(currentSeasonId,{updateBoard:true});
-  track("page_view",{attribution:EXPERIENCE.getAttribution(),challenge:Boolean(challenge),version:CONFIG.version});
+  function queueEvent(event) {
+    state.eventSeq += 1;
+    state.eventBuffer.push({
+      seq:state.eventSeq,
+      atMs:Math.round(performance.now()),
+      ...event
+    });
+    if (state.eventBuffer.length > CONFIG.gameplay.maxEventBuffer) {
+      state.eventBuffer.splice(0, state.eventBuffer.length - CONFIG.gameplay.maxEventBuffer);
+    }
+  }
+
+  async function flushEvents(force = false) {
+    if (state.flushBusy || !state.gameStarted) return;
+    const now = performance.now();
+    if (!force && now - state.lastFlushAt < CONFIG.ranking.eventFlushMs) return;
+    if (!state.eventBuffer.length && !force) return;
+    state.flushBusy = true;
+    state.lastFlushAt = now;
+    const batch = state.eventBuffer.splice(0, state.eventBuffer.length);
+    try {
+      const result = await BOARD.pushEvents({
+        gameId:state.gameId,
+        nickname:EXP.getNickname(),
+        events:batch,
+        currentScore:state.score,
+        maxLevel:state.maxLevel + 1
+      });
+      updateRankUi({
+        ...(state.lastLeaderboard || {}),
+        connected:result.connected,
+        source:result.source,
+        myBest:result.myBest,
+        myRank:result.myRank,
+        topScore:result.topScore,
+        weekLabel:EXP.getWeekLabel(),
+        rows:state.lastLeaderboard?.rows || []
+      });
+      if (!result.connected && CONFIG.store.leaderboardApi && batch.length) {
+        state.eventBuffer.unshift(...batch);
+      }
+    } catch (_) {
+      if (batch.length) state.eventBuffer.unshift(...batch);
+    } finally {
+      state.flushBusy = false;
+    }
+  }
+
+  async function beginGame() {
+    clearItems();
+    state.gameId = EXP.newGameId();
+    state.eventSeq = 0;
+    state.eventBuffer.length = 0;
+    state.score = 0;
+    state.currentLevel = randomDropLevel();
+    state.nextLevel = randomDropLevel();
+    state.dropX = W / 2;
+    state.canDrop = true;
+    state.gameOver = false;
+    state.gameStarted = true;
+    state.dangerMs = 0;
+    state.maxLevel = 0;
+    state.firstDrop = true;
+    state.pauseReasons.clear();
+    updateScore(0);
+    els.dropGuide.style.opacity = "1";
+    closeLayer(els.resultOverlay);
+    closeLayer(els.pauseOverlay, "manual");
+    els.pauseButton.textContent = "Ⅱ";
+    updateNextPreview();
+    renderRecipe();
+    await BOARD.startGame({
+      gameId:state.gameId,
+      nickname:EXP.getNickname()
+    });
+    await refreshLeaderboard(true);
+    lastFrame = performance.now();
+    track("game_start");
+  }
+
+  function dropCurrent() {
+    if (!state.gameStarted || state.gameOver || isPaused() || !state.canDrop) return;
+    createBody(state.currentLevel, clampDropX(state.dropX), CONFIG.physics.dropY);
+    queueEvent({ type:"drop", level:state.currentLevel + 1 });
+    state.currentLevel = state.nextLevel;
+    state.nextLevel = randomDropLevel();
+    updateNextPreview();
+    state.canDrop = false;
+    if (state.firstDrop) {
+      state.firstDrop = false;
+      els.dropGuide.style.opacity = "0";
+    }
+    setTimeout(() => { state.canDrop = true; }, CONFIG.physics.dropCooldownMs);
+  }
+
+  function onCollision(event) {
+    for (const pair of event.pairs) {
+      const a = pair.bodyA;
+      const b = pair.bodyB;
+      if (!isItem(a) || !isItem(b)) continue;
+      if (a.plugin.level !== b.plugin.level) continue;
+      if (a.plugin.merging || b.plugin.merging) continue;
+      a.plugin.merging = true;
+      b.plugin.merging = true;
+      mergeQueue.push([a, b]);
+    }
+  }
+
+  Events.on(engine, "collisionStart", onCollision);
+  Events.on(engine, "collisionActive", onCollision);
+
+  function bodyStillExists(body) {
+    return Composite.allBodies(world).includes(body);
+  }
+
+  function processMerges() {
+    while (mergeQueue.length) {
+      const [a, b] = mergeQueue.shift();
+      if (!bodyStillExists(a) || !bodyStillExists(b)) continue;
+      const level = a.plugin.level;
+      const x = (a.position.x + b.position.x) / 2;
+      const y = (a.position.y + b.position.y) / 2;
+      const velocity = {
+        x:(a.velocity.x + b.velocity.x) / 2,
+        y:(a.velocity.y + b.velocity.y) / 2
+      };
+
+      Composite.remove(world, a);
+      Composite.remove(world, b);
+
+      let points = 0;
+      let toLevel = null;
+      if (level < menus.length - 1) {
+        toLevel = level + 1;
+        const created = createBody(toLevel, x, Math.max(y, menus[toLevel].radius + 2));
+        Body.setVelocity(created, velocity);
+        points = menus[toLevel].points;
+        if (toLevel > state.maxLevel) {
+          state.maxLevel = toLevel;
+          renderRecipe();
+        }
+      } else {
+        points = CONFIG.gameplay.completionBonus;
+      }
+
+      updateScore(state.score + points);
+      queueEvent({
+        type:"merge",
+        fromLevel:level + 1,
+        toLevel:toLevel === null ? null : toLevel + 1,
+        points
+      });
+      fx.push({ x, y, points, born:performance.now() });
+      track("merge", { fromLevel:level + 1, toLevel:toLevel === null ? 0 : toLevel + 1, points });
+    }
+  }
+
+  function checkDanger(dt) {
+    if (!state.gameStarted || state.gameOver || isPaused()) return;
+    const now = performance.now();
+    const above = Composite.allBodies(world).some(body =>
+      isItem(body) &&
+      now - body.plugin.bornAt > CONFIG.physics.freshBodyGraceMs &&
+      body.position.y - body.circleRadius < CONFIG.physics.dangerY
+    );
+    state.dangerMs = above ? state.dangerMs + dt : 0;
+    if (state.dangerMs >= CONFIG.physics.dangerHoldMs) endGame();
+  }
+
+  async function endGame() {
+    if (state.gameOver) return;
+    state.gameOver = true;
+    state.canDrop = false;
+    await flushEvents(true);
+    const result = await BOARD.finishGame({
+      gameId:state.gameId,
+      nickname:EXP.getNickname(),
+      currentScore:state.score,
+      maxLevel:state.maxLevel + 1,
+      lastSeq:state.eventSeq
+    });
+    state.best = Math.max(state.best, Number(result.myBest || 0), state.score);
+    els.resultScore.textContent = state.score.toLocaleString("ko-KR");
+    els.resultBest.textContent = state.best.toLocaleString("ko-KR");
+    els.resultRank.textContent = result.myRank ? `#${result.myRank}` : "–";
+    els.resultMenuName.textContent = menus[state.maxLevel].name;
+    menuThumb(els.resultMenuThumb, state.maxLevel, 54);
+    updateRankUi({
+      ...(state.lastLeaderboard || {}),
+      connected:result.connected,
+      source:result.source,
+      myBest:state.best,
+      myRank:result.myRank,
+      topScore:result.topScore,
+      weekLabel:EXP.getWeekLabel(),
+      rows:state.lastLeaderboard?.rows || []
+    });
+    openLayer(els.resultOverlay);
+    track("game_finish", { maxLevel:state.maxLevel + 1 });
+  }
+
+  function drawFallback(menu, radius) {
+    ctx.beginPath();
+    ctx.arc(0, 0, radius, 0, Math.PI * 2);
+    ctx.fillStyle = menu.tone;
+    ctx.fill();
+    ctx.strokeStyle = "rgba(59,44,36,.18)";
+    ctx.lineWidth = 1.6;
+    ctx.stroke();
+    ctx.fillStyle = "#fff";
+    ctx.font = `800 ${Math.max(10, radius * .75)}px system-ui`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(menu.fallback, 0, 1);
+  }
+
+  function drawMenu(level, x, y, angle = 0, alpha = 1) {
+    const menu = menus[level];
+    const radius = menu.radius;
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.translate(x, y);
+    ctx.rotate(angle);
+    if (menu.image && menu.image.complete && menu.image.naturalWidth) {
+      const size = radius * 2.25;
+      ctx.drawImage(menu.image, -size / 2, -size / 2, size, size);
+    } else {
+      drawFallback(menu, radius);
+    }
+    ctx.restore();
+  }
+
+  function drawBoard(now) {
+    ctx.setTransform(renderScale * dpr, 0, 0, renderScale * dpr, 0, 0);
+    ctx.clearRect(0, 0, W, H);
+
+    const bg = ctx.createLinearGradient(0, 0, 0, H);
+    bg.addColorStop(0, "#fffaf0");
+    bg.addColorStop(1, "#f2e1cb");
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, W, H);
+
+    ctx.fillStyle = "rgba(191,150,112,.12)";
+    ctx.beginPath();
+    ctx.ellipse(W / 2, H - 7, W * .46, 24, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    const danger = state.dangerMs > 0;
+    ctx.save();
+    ctx.setLineDash([8, 7]);
+    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = danger && Math.floor(now / 180) % 2 === 0 ? "#c84e45" : "rgba(127,81,55,.20)";
+    ctx.beginPath();
+    ctx.moveTo(7, CONFIG.physics.dangerY);
+    ctx.lineTo(W - 7, CONFIG.physics.dangerY);
+    ctx.stroke();
+    ctx.restore();
+
+    if (state.gameStarted && !state.gameOver) {
+      const x = clampDropX(state.dropX);
+      ctx.save();
+      ctx.setLineDash([3, 6]);
+      ctx.strokeStyle = "rgba(90,66,50,.20)";
+      ctx.beginPath();
+      ctx.moveTo(x, CONFIG.physics.dropY + menus[state.currentLevel].radius);
+      ctx.lineTo(x, H - 15);
+      ctx.stroke();
+      ctx.restore();
+      if (state.canDrop) drawMenu(state.currentLevel, x, CONFIG.physics.dropY);
+    }
+
+    for (const body of Composite.allBodies(world)) {
+      if (isItem(body)) drawMenu(body.plugin.level, body.position.x, body.position.y, body.angle);
+    }
+
+    for (let i = fx.length - 1; i >= 0; i--) {
+      const item = fx[i];
+      const t = (now - item.born) / 650;
+      if (t >= 1) {
+        fx.splice(i, 1);
+        continue;
+      }
+      ctx.save();
+      ctx.globalAlpha = 1 - t;
+      ctx.fillStyle = "#667d62";
+      ctx.font = "800 18px system-ui";
+      ctx.textAlign = "center";
+      ctx.fillText(`+${item.points}`, item.x, item.y - 10 - t * 28);
+      ctx.restore();
+    }
+
+    ctx.save();
+    ctx.strokeStyle = "rgba(164,118,80,.40)";
+    ctx.lineWidth = 7;
+    ctx.beginPath();
+    ctx.moveTo(4, 112);
+    ctx.quadraticCurveTo(0, H * .72, 32, H - 10);
+    ctx.moveTo(W - 4, 112);
+    ctx.quadraticCurveTo(W, H * .72, W - 32, H - 10);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function frame(now) {
+    const dt = Math.min(now - lastFrame, 100);
+    lastFrame = now;
+    if (state.gameStarted && !state.gameOver && !isPaused()) {
+      accumulator += dt;
+      while (accumulator >= STEP) {
+        Engine.update(engine, STEP);
+        processMerges();
+        accumulator -= STEP;
+      }
+      checkDanger(dt);
+      flushEvents(false);
+      refreshLeaderboard(false);
+    }
+    drawBoard(now);
+    requestAnimationFrame(frame);
+  }
+
+  function pointerToWorldX(event) {
+    const rect = els.canvas.getBoundingClientRect();
+    return ((event.clientX - rect.left) / rect.width) * W;
+  }
+
+  els.canvas.addEventListener("pointerdown", event => {
+    if (!state.gameStarted || state.gameOver || isPaused()) return;
+    state.pressing = true;
+    state.dropX = pointerToWorldX(event);
+    els.canvas.setPointerCapture?.(event.pointerId);
+    event.preventDefault();
+  });
+
+  els.canvas.addEventListener("pointermove", event => {
+    if (!state.pressing || state.gameOver || isPaused()) return;
+    state.dropX = pointerToWorldX(event);
+    event.preventDefault();
+  });
+
+  els.canvas.addEventListener("pointerup", event => {
+    if (!state.pressing || state.gameOver || isPaused()) return;
+    state.pressing = false;
+    state.dropX = pointerToWorldX(event);
+    dropCurrent();
+    event.preventDefault();
+  });
+
+  els.canvas.addEventListener("pointercancel", () => {
+    state.pressing = false;
+  });
+
+  function validateAndSave(input, errorEl) {
+    const checked = EXP.setNickname(input.value);
+    errorEl.textContent = checked.reason || "";
+    if (!checked.ok) return null;
+    return checked.value;
+  }
+
+  els.startButton.addEventListener("click", async () => {
+    const nickname = validateAndSave(els.nicknameInput, els.nicknameError);
+    if (!nickname) return;
+    els.nicknameDisplay.textContent = nickname;
+    showGameScreen();
+    await beginGame();
+  });
+
+  els.nicknameInput.addEventListener("keydown", event => {
+    if (event.key === "Enter") els.startButton.click();
+  });
+
+  els.pauseButton.addEventListener("click", () => {
+    if (state.gameOver) return;
+    if (state.pauseReasons.has("manual")) {
+      closeLayer(els.pauseOverlay, "manual");
+    } else {
+      openLayer(els.pauseOverlay, "manual");
+    }
+  });
+
+  els.resumeButton.addEventListener("click", () => closeLayer(els.pauseOverlay, "manual"));
+  els.restartButton.addEventListener("click", beginGame);
+
+  els.nicknameButton.addEventListener("click", () => {
+    els.nicknameEditInput.value = EXP.getNickname();
+    els.nicknameEditError.textContent = "";
+    openLayer(els.nicknameOverlay, "nickname");
+  });
+
+  els.saveNicknameButton.addEventListener("click", () => {
+    const nickname = validateAndSave(els.nicknameEditInput, els.nicknameEditError);
+    if (!nickname) return;
+    els.nicknameDisplay.textContent = nickname;
+    closeLayer(els.nicknameOverlay, "nickname");
+    track("nickname_change");
+    refreshLeaderboard(true);
+  });
+
+  els.recipeButton.addEventListener("click", () => {
+    renderRecipe();
+    openLayer(els.recipeOverlay, "recipe");
+    track("recipe_open");
+  });
+
+  els.rankingButton.addEventListener("click", async () => {
+    openLayer(els.rankingOverlay, "ranking");
+    await refreshLeaderboard(true);
+    track("ranking_open");
+  });
+
+  document.querySelectorAll("[data-close]").forEach(button => {
+    button.addEventListener("click", () => {
+      const id = button.dataset.close;
+      const el = $(id);
+      const reason = id === "recipeOverlay" ? "recipe" : id === "rankingOverlay" ? "ranking" : id === "nicknameOverlay" ? "nickname" : "";
+      closeLayer(el, reason);
+    });
+  });
+
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) addPause("hidden");
+    else removePause("hidden");
+  });
+
+  async function boot() {
+    loadAssets();
+    const saved = EXP.getNickname();
+    els.nicknameInput.value = saved;
+    els.nicknameDisplay.textContent = saved || "PLAYER";
+    els.weekLabel.textContent = EXP.getWeekLabel();
+    els.weekLabelEntry.textContent = `이번 주 · ${EXP.getWeekLabel()}`;
+    state.best = BOARD.getLocalBest();
+    els.personalBest.textContent = state.best.toLocaleString("ko-KR");
+    renderRecipe();
+    await refreshLeaderboard(true);
+    resizeCanvas();
+    requestAnimationFrame(frame);
+  }
+
+  boot();
 })();
