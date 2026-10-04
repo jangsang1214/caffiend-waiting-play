@@ -534,10 +534,6 @@
     const menu = menus[level];
     const radius = menu.radius;
     const size = radius * 2.58;
-    if (ART?.drawTo) {
-      ART.drawTo(ctx, level, x, y, size, angle, alpha);
-      return;
-    }
     ctx.save();
     ctx.globalAlpha = alpha;
     ctx.translate(x, y);
