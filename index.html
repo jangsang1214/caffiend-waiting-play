@@ -3,28 +3,35 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
-  <meta name="theme-color" content="#f5eadb">
+  <meta name="theme-color" content="#f4dfc4">
   <meta name="description" content="카피엔드 디저트 합체 게임 디굴디굴">
   <title>디굴디굴 · CAFFIEND</title>
-  <link rel="stylesheet" href="./style.css?v=1.0.0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@500;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./style.css?v=1.1.0">
 </head>
 <body>
   <main class="app" aria-live="polite">
     <div class="cafe-bg" aria-hidden="true">
+      <div class="sun-glow"></div>
       <div class="window"><span></span></div>
       <div class="curtain curtain-left"></div>
       <div class="curtain curtain-right"></div>
-      <div class="plant">☘</div>
-      <div class="cup"></div>
+      <div class="shelf shelf-a"></div>
+      <div class="shelf shelf-b"></div>
+      <div class="plant plant-left"></div>
+      <div class="plant plant-right"></div>
       <div class="table"></div>
     </div>
 
     <section id="entryScreen" class="screen entry-screen active">
       <div class="entry-card">
-        <div class="brand-mark">C</div>
-        <p class="eyebrow">CAFFIEND PLAY</p>
-        <h1>디굴디굴</h1>
-        <p class="sub">디저트가 데굴데굴</p>
+        <div class="entry-logo" aria-label="디굴디굴">
+          <strong>디굴디굴</strong>
+          <small>CAFFIEND PLAY</small>
+        </div>
+        <p class="entry-copy">기다리는 동안 한 판</p>
 
         <label class="nickname-field">
           <span>닉네임</span>
@@ -33,59 +40,74 @@
         <p id="nicknameError" class="field-error" role="alert"></p>
 
         <button id="startButton" class="primary-button" type="button">
-          <span>시작</span>
+          <span>게임 시작</span>
           <small id="weekLabelEntry">이번 주</small>
         </button>
       </div>
     </section>
 
     <section id="gameScreen" class="screen game-screen">
-      <header class="topbar">
-        <div class="brand-lockup">
+      <header class="game-header">
+        <div class="game-logo" aria-label="디굴디굴">
           <strong>디굴디굴</strong>
           <small>CAFFIEND</small>
         </div>
-        <button id="nicknameButton" class="player-chip" type="button" aria-label="닉네임 변경">
-          <span id="nicknameDisplay">PLAYER</span>
-          <small>✎</small>
-        </button>
-        <button id="pauseButton" class="icon-button" type="button" aria-label="일시정지">Ⅱ</button>
+
+        <div class="header-actions">
+          <button id="nicknameButton" class="player-chip" type="button" aria-label="닉네임 변경">
+            <i class="leaf-mark" aria-hidden="true"></i>
+            <span id="nicknameDisplay">PLAYER</span>
+          </button>
+          <button id="pauseButton" class="pause-button" type="button" aria-label="일시정지">Ⅱ</button>
+        </div>
       </header>
 
       <section class="hud">
         <div class="score-card">
-          <span>SCORE</span>
+          <div class="hud-label"><i class="leaf-mark" aria-hidden="true"></i><span>스코어</span></div>
           <strong id="scoreValue">0</strong>
-          <small>BEST <b id="personalBestValue">0</b></small>
+          <div class="best-line"><span class="crown-mark">♛</span><span>최고</span><b id="personalBestValue">0</b></div>
         </div>
+
         <div class="next-card">
-          <span>NEXT</span>
+          <div class="hud-label heart-label"><span>♥</span><span>다음</span></div>
           <div id="nextPreview" class="next-preview"></div>
         </div>
       </section>
 
       <section class="play-area">
         <div class="board-wrap">
+          <div class="bowl-rim" aria-hidden="true"></div>
           <canvas id="gameCanvas" aria-label="디저트 합체 게임"></canvas>
           <div id="dropGuide" class="drop-guide">끌고 · 놓기</div>
-          <div id="connectionPill" class="connection-pill is-local">
-            <i></i><span id="connectionText">LOCAL</span>
-          </div>
         </div>
 
         <div class="rank-strip">
-          <div><span>내 순위</span><strong id="myRankValue">–</strong></div>
-          <div class="week-pill" id="weekLabel">이번 주</div>
-          <div><span>1위</span><strong id="topScoreValue">0</strong></div>
+          <div id="connectionPill" class="live-state is-local">
+            <i></i><strong id="connectionText">내 기록</strong>
+          </div>
+          <div class="rank-center">
+            <span>내 순위</span>
+            <strong id="myRankValue">–</strong>
+          </div>
+          <div class="rank-best">
+            <span>이번 주 최고</span>
+            <strong id="topScoreValue">0</strong>
+          </div>
+          <span id="weekLabel" class="sr-only">이번 주</span>
         </div>
       </section>
 
       <footer class="bottom-actions">
         <button id="recipeButton" class="footer-button" type="button">
-          <span>◌</span><strong>합체 순서</strong>
+          <span id="recipeButtonPreview" class="action-preview" aria-hidden="true"></span>
+          <strong>합체 순서</strong>
+          <i>›</i>
         </button>
-        <button id="rankingButton" class="footer-button footer-button-strong" type="button">
-          <span>♛</span><strong>실시간 순위</strong>
+        <button id="rankingButton" class="footer-button footer-button-rank" type="button">
+          <span class="trophy-mark">★</span>
+          <strong>실시간 순위</strong>
+          <i>›</i>
         </button>
       </footer>
     </section>
@@ -133,7 +155,10 @@
       <div class="sheet-panel">
         <div class="sheet-handle"></div>
         <div class="sheet-title">
-          <div><p class="eyebrow">MERGE</p><h2>합체 순서</h2></div>
+          <div>
+            <p class="eyebrow">MERGE</p>
+            <h2>합체 순서</h2>
+          </div>
           <button class="close-button" data-close="recipeOverlay" type="button">×</button>
         </div>
         <div id="recipeList" class="recipe-list"></div>
@@ -142,10 +167,15 @@
 
     <section id="rankingOverlay" class="sheet" aria-hidden="true">
       <div class="sheet-backdrop" data-close="rankingOverlay"></div>
-      <div class="sheet-panel">
+      <div class="sheet-panel ranking-sheet">
         <div class="sheet-handle"></div>
-        <div class="sheet-title">
-          <div><p class="eyebrow">LIVE · WEEKLY</p><h2>이번 주 순위</h2></div>
+        <div class="ranking-hero">
+          <div class="ranking-cup">★</div>
+          <div>
+            <p class="eyebrow">LIVE · WEEKLY</p>
+            <h2>실시간 순위</h2>
+            <small>이번 주 최고 기록 기준</small>
+          </div>
           <button class="close-button" data-close="rankingOverlay" type="button">×</button>
         </div>
         <div id="rankingStatus" class="ranking-status">불러오는 중</div>
@@ -155,10 +185,10 @@
   </main>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
-  <script src="./config.js?v=1.0.0"></script>
-  <script src="./experience.js?v=1.0.0"></script>
-  <script src="./leaderboard.js?v=1.0.0"></script>
-  <script src="./analytics.js?v=1.0.0"></script>
-  <script src="./game.js?v=1.0.0"></script>
+  <script src="./config.js?v=1.1.0"></script>
+  <script src="./experience.js?v=1.1.0"></script>
+  <script src="./leaderboard.js?v=1.1.0"></script>
+  <script src="./analytics.js?v=1.1.0"></script>
+  <script src="./game.js?v=1.1.0"></script>
 </body>
 </html>
