@@ -1,117 +1,98 @@
 (() => {
-  const PREFIX = "caffiend-moments";
-  const DEVICE_KEY = `${PREFIX}:device-id`;
-  const PASSPORT_KEY = `${PREFIX}:season-passport`;
-  const SESSION_KEY = `${PREFIX}:session-id`;
-  const SEASONS = ["spring", "summer", "autumn", "winter"];
+  const CONFIG = window.DIGUL_CONFIG;
+  const PREFIX = "diguldigul";
+  const PLAYER_KEY = `${PREFIX}:player-id`;
+  const NICKNAME_KEY = `${PREFIX}:nickname`;
 
-  const safeParse = (raw, fallback) => {
-    try { return JSON.parse(raw) ?? fallback; } catch (_) { return fallback; }
-  };
+  function uuid() {
+    if (crypto?.randomUUID) return crypto.randomUUID();
+    return "xxxxxxxxyxxx4xxx".replace(/[xy]/g, c => {
+      const r = Math.random() * 16 | 0;
+      return (c === "x" ? r : (r & 3 | 8)).toString(16);
+    });
+  }
 
-  const uid = (prefix) => {
-    if (globalThis.crypto?.randomUUID) return `${prefix}_${crypto.randomUUID()}`;
-    return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
-  };
-
-  function getDeviceId() {
-    let id = localStorage.getItem(DEVICE_KEY);
+  function getPlayerId() {
+    let id = localStorage.getItem(PLAYER_KEY);
     if (!id) {
-      id = uid("device");
-      localStorage.setItem(DEVICE_KEY, id);
+      id = uuid();
+      localStorage.setItem(PLAYER_KEY, id);
     }
     return id;
   }
 
-  function getSessionId() {
-    let id = sessionStorage.getItem(SESSION_KEY);
-    if (!id) {
-      id = uid("session");
-      sessionStorage.setItem(SESSION_KEY, id);
+  function getNickname() {
+    return (localStorage.getItem(NICKNAME_KEY) || "").trim();
+  }
+
+  function validateNickname(value) {
+    const raw = String(value || "").trim();
+    if (raw.length < CONFIG.nickname.min || raw.length > CONFIG.nickname.max) {
+      return { ok:false, value:raw, reason:`${CONFIG.nickname.min}~${CONFIG.nickname.max}자로 입력해 주세요.` };
     }
-    return id;
+    if (!(new RegExp(CONFIG.nickname.pattern)).test(raw)) {
+      return { ok:false, value:raw, reason:"한글·영문·숫자만 사용할 수 있어요." };
+    }
+    return { ok:true, value:raw, reason:"" };
   }
 
-  function readPassport() {
-    const raw = safeParse(localStorage.getItem(PASSPORT_KEY), {});
-    return SEASONS.reduce((acc, season) => {
-      const value = raw?.[season];
-      acc[season] = value && typeof value === "object" ? value : null;
-      return acc;
-    }, {});
+  function setNickname(value) {
+    const checked = validateNickname(value);
+    if (!checked.ok) return checked;
+    localStorage.setItem(NICKNAME_KEY, checked.value);
+    return checked;
   }
 
-  function writePassport(passport) {
-    localStorage.setItem(PASSPORT_KEY, JSON.stringify(passport));
+  function getKstParts(date = new Date()) {
+    const parts = new Intl.DateTimeFormat("en-CA", {
+      timeZone: CONFIG.timezone,
+      year:"numeric", month:"2-digit", day:"2-digit",
+      weekday:"short", hour:"2-digit", minute:"2-digit", second:"2-digit",
+      hourCycle:"h23"
+    }).formatToParts(date);
+    return Object.fromEntries(parts.map(p => [p.type, p.value]));
   }
 
-  function getPassport() {
-    const entries = readPassport();
-    const completed = SEASONS.filter((season) => Boolean(entries[season]));
-    return {
-      entries,
-      completed,
-      count: completed.length,
-      total: SEASONS.length,
-      complete: completed.length === SEASONS.length
+  function getKstDateKey(date = new Date()) {
+    const p = getKstParts(date);
+    return `${p.year}-${p.month}-${p.day}`;
+  }
+
+  function getWeekKey(date = new Date()) {
+    const p = getKstParts(date);
+    const kstMidnightUtc = new Date(`${p.year}-${p.month}-${p.day}T00:00:00+09:00`);
+    const weekday = kstMidnightUtc.getUTCDay();
+    const mondayOffset = (weekday + 6) % 7;
+    const monday = new Date(kstMidnightUtc.getTime() - mondayOffset * 86400000);
+    const sunday = new Date(monday.getTime() + 6 * 86400000);
+    const f = d => new Intl.DateTimeFormat("en-CA", {
+      timeZone: CONFIG.timezone, year:"numeric", month:"2-digit", day:"2-digit"
+    }).format(d);
+    return `${f(monday)}_${f(sunday)}`;
+  }
+
+  function getWeekLabel(date = new Date()) {
+    const key = getWeekKey(date);
+    const [start, end] = key.split("_");
+    const short = s => {
+      const [,m,d] = s.split("-");
+      return `${Number(m)}/${Number(d)}`;
     };
+    return `${short(start)}–${short(end)}`;
   }
 
-  function stampSeason(seasonId, score) {
-    if (!SEASONS.includes(seasonId)) return getPassport();
-    const passport = readPassport();
-    const before = passport[seasonId];
-    passport[seasonId] = {
-      firstAt: before?.firstAt || new Date().toISOString(),
-      lastAt: new Date().toISOString(),
-      plays: Number(before?.plays || 0) + 1,
-      best: Math.max(Number(before?.best || 0), Number(score || 0))
-    };
-    writePassport(passport);
-    return getPassport();
+  function newGameId() {
+    return uuid();
   }
 
-  function getAttribution() {
-    const params = new URLSearchParams(location.search);
-    return {
-      source: params.get("src") || params.get("utm_source") || "direct",
-      campaign: params.get("campaign") || params.get("utm_campaign") || "store-waiting-play",
-      table: params.get("table") || "",
-      medium: params.get("utm_medium") || "qr",
-      content: params.get("utm_content") || ""
-    };
-  }
-
-  function getChallenge() {
-    const params = new URLSearchParams(location.search);
-    const enabled = params.get("challenge") === "1";
-    const target = Math.max(0, Number(params.get("target") || 0));
-    const season = params.get("season");
-    if (!enabled || !target) return null;
-    return {
-      target,
-      seasonId: SEASONS.includes(season) ? season : null,
-      source: params.get("src") || "challenge"
-    };
-  }
-
-  function buildChallengeUrl({ score, seasonId }) {
-    const url = new URL(location.href);
-    url.search = "";
-    url.searchParams.set("challenge", "1");
-    url.searchParams.set("target", String(Math.max(0, Math.round(score || 0))));
-    if (SEASONS.includes(seasonId)) url.searchParams.set("season", seasonId);
-    url.searchParams.set("src", "challenge");
-    return url.toString();
-  }
-
-  window.CaffiendExperience = {
-    getDeviceId,
-    getSessionId,
-    getPassport,
-    stampSeason,
-    getAttribution,
-    getChallenge,
-    buildChallengeUrl
+  window.DigulExperience = {
+    getPlayerId,
+    getNickname,
+    setNickname,
+    validateNickname,
+    getKstDateKey,
+    getWeekKey,
+    getWeekLabel,
+    newGameId
   };
 })();
