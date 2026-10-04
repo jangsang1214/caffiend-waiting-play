@@ -1,5 +1,5 @@
 window.DIGUL_CONFIG = {
-  version: "1.4.1",
+  version: "1.4.2",
   gameName: "디굴디굴",
   subtitle: "디저트가 데굴데굴",
   timezone: "Asia/Seoul",
