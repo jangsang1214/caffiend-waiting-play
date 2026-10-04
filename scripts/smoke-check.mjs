@@ -32,7 +32,7 @@ const sandbox = { window: {} };
 vm.runInNewContext(configSource, sandbox);
 const config = sandbox.window.DIGUL_CONFIG;
 if (!config) throw new Error("DIGUL_CONFIG not found");
-if (config.version !== "1.2.0") throw new Error("Unexpected UI version");
+if (config.version !== "1.2.1") throw new Error("Unexpected UI version");
 if (!Array.isArray(config.menus) || config.menus.length !== 11) throw new Error("Exactly 11 menu stages are required");
 
 config.menus.forEach((menu, index) => {
@@ -41,6 +41,7 @@ config.menus.forEach((menu, index) => {
 });
 
 if (config.ranking.period !== "weekly") throw new Error("Leaderboard must use weekly aggregation");
+if (!config.store.leaderboardApi.includes("supabase.co/functions/v1/digul-api")) throw new Error("Live Supabase leaderboard API is not configured");
 if (config.gameplay.completionBonus !== 150) throw new Error("Completion bonus must remain 150");
 
 const scriptOrder = ["config.js","experience.js","leaderboard.js","analytics.js","dessert-art.js","game.js","side-games.js"];
