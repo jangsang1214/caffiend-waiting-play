@@ -28,6 +28,7 @@ jobs:
           test -f style.css
           test -f README.md
           test -f dessert-art.js
+          test -f assets/menu/menu-atlas-v2.webp
           test -f side-games.js
           test -f assets/menu/README.md
           test -f supabase/migrations/002_digul.sql
