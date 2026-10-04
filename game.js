@@ -3,6 +3,7 @@
   const EXP = window.DigulExperience;
   const BOARD = window.DigulLeaderboard;
   const ANALYTICS = window.DigulAnalytics;
+  const ART = window.DigulDessertArt;
   if (!CONFIG || !EXP || !BOARD || !window.Matter) return;
 
   const $ = id => document.getElementById(id);
@@ -55,7 +56,8 @@
     restartButton:$("restartButton"), pauseOverlay:$("pauseOverlay"), resumeButton:$("resumeButton"),
     nicknameOverlay:$("nicknameOverlay"), nicknameEditInput:$("nicknameEditInput"), nicknameEditError:$("nicknameEditError"),
     saveNicknameButton:$("saveNicknameButton"), recipeOverlay:$("recipeOverlay"), recipeList:$("recipeList"),
-    rankingOverlay:$("rankingOverlay"), rankingStatus:$("rankingStatus"), rankingList:$("rankingList")
+    rankingOverlay:$("rankingOverlay"), rankingStatus:$("rankingStatus"), rankingList:$("rankingList"),
+    digulHomeButton:$("digulHomeButton")
   };
 
   const ctx = els.canvas.getContext("2d");
@@ -84,67 +86,52 @@
     ANALYTICS?.track?.(event, { gameId:state.gameId, score:state.score, ...meta });
   }
 
-  function imageUrl(menu) {
-    return encodeURI(`${CONFIG.assets.base}${menu.file}`);
-  }
-
   function loadAssets() {
-    menus.forEach(menu => {
-      const img = new Image();
-      img.decoding = "async";
-      img.onload = () => { menu.image = img; menu.imageFailed = false; };
-      img.onerror = () => { menu.imageFailed = true; };
-      img.src = imageUrl(menu);
+    if (!ART) return;
+    menus.forEach((menu, index) => {
+      menu.image = ART.render(index, 256);
+      menu.imageFailed = false;
     });
   }
 
-  function menuThumb(target, level, size = 48) {
-    const menu = menus[level];
+  function appendGeneratedArt(target, level, size) {
+    if (!target) return;
     target.innerHTML = "";
     target.style.width = `${size}px`;
     target.style.height = `${size}px`;
-    const img = document.createElement("img");
-    img.src = imageUrl(menu);
-    img.alt = menu.name;
-    img.onload = () => {};
-    img.onerror = () => {
-      img.remove();
-      const fallback = document.createElement("div");
-      fallback.className = "menu-fallback";
-      fallback.style.background = menu.tone;
-      fallback.textContent = menu.fallback;
-      target.appendChild(fallback);
-    };
-    target.appendChild(img);
+    if (ART) {
+      const canvas = ART.render(level, size);
+      canvas.className = "dessert-canvas";
+      canvas.setAttribute("aria-label", menus[level].name);
+      target.appendChild(canvas);
+      return;
+    }
+    const fallback = document.createElement("div");
+    fallback.className = "menu-fallback";
+    fallback.style.background = menus[level].tone;
+    fallback.textContent = menus[level].fallback;
+    target.appendChild(fallback);
+  }
+
+  function menuThumb(target, level, size = 48) {
+    appendGeneratedArt(target, level, size);
   }
 
   function createInlineThumb(level) {
     const el = document.createElement("div");
     el.className = "thumb menu-sprite";
-    const menu = menus[level];
-    const img = document.createElement("img");
-    img.src = imageUrl(menu);
-    img.alt = "";
-    img.onerror = () => {
-      img.remove();
-      const f = document.createElement("div");
-      f.className = "menu-fallback";
-      f.style.background = menu.tone;
-      f.textContent = menu.fallback;
-      el.appendChild(f);
-    };
-    el.appendChild(img);
+    appendGeneratedArt(el, level, 46);
     return el;
   }
 
   function showGameScreen() {
-    els.entry.classList.remove("active");
+    document.querySelectorAll(".screen.active").forEach(screen => screen.classList.remove("active"));
     els.game.classList.add("active");
     requestAnimationFrame(resizeCanvas);
   }
 
   function showEntryScreen() {
-    els.game.classList.remove("active");
+    document.querySelectorAll(".screen.active").forEach(screen => screen.classList.remove("active"));
     els.entry.classList.add("active");
   }
 
@@ -546,16 +533,17 @@
   function drawMenu(level, x, y, angle = 0, alpha = 1) {
     const menu = menus[level];
     const radius = menu.radius;
+    const size = radius * 2.58;
+    if (ART?.drawTo) {
+      ART.drawTo(ctx, level, x, y, size, angle, alpha);
+      return;
+    }
     ctx.save();
     ctx.globalAlpha = alpha;
     ctx.translate(x, y);
     ctx.rotate(angle);
-    if (menu.image && menu.image.complete && menu.image.naturalWidth) {
-      const size = radius * 2.25;
-      ctx.drawImage(menu.image, -size / 2, -size / 2, size, size);
-    } else {
-      drawFallback(menu, radius);
-    }
+    if (menu.image) ctx.drawImage(menu.image, -size / 2, -size / 2, size, size);
+    else drawFallback(menu, radius);
     ctx.restore();
   }
 
@@ -722,6 +710,17 @@
 
   els.resumeButton.addEventListener("click", () => closeLayer(els.pauseOverlay, "manual"));
   els.restartButton.addEventListener("click", beginGame);
+
+  els.digulHomeButton?.addEventListener("click", () => {
+    state.gameStarted = false;
+    state.gameOver = false;
+    state.pauseReasons.clear();
+    clearItems();
+    closeLayer(els.resultOverlay);
+    closeLayer(els.pauseOverlay, "manual");
+    showEntryScreen();
+    track("return_home");
+  });
 
   els.nicknameButton.addEventListener("click", () => {
     els.nicknameEditInput.value = EXP.getNickname();
