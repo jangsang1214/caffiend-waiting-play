@@ -284,29 +284,110 @@
     ctx.drawImage(art,-size/2,-size/2,size,size);ctx.restore();
   }
 
-  const ATLAS_URL="./assets/menu/menu-atlas-v2.webp?v=3";
+  const ATLAS_URL="./assets/menu/menu-atlas-v2.webp?v=5";
+  const ATLAS_W=512;
+  const ATLAS_H=384;
+  const CELL_W=128;
+  const CELL_H=128;
   const atlas=new Image();
   atlas.decoding="async";
   let atlasReady=false;
+  let atlasFailed=false;
+  let bounds=Array.from({length:11},()=>null);
+  const waiters=[];
+
+  function settleReady(){
+    while(waiters.length) waiters.shift()();
+  }
+
+  function computeBounds(){
+    const scratch=document.createElement("canvas");
+    scratch.width=CELL_W;
+    scratch.height=CELL_H;
+    const sctx=scratch.getContext("2d",{willReadFrequently:true});
+    bounds=Array.from({length:11},(_,level)=>{
+      const col=level%4;
+      const row=Math.floor(level/4);
+      sctx.clearRect(0,0,CELL_W,CELL_H);
+      sctx.drawImage(atlas,col*CELL_W,row*CELL_H,CELL_W,CELL_H,0,0,CELL_W,CELL_H);
+      const data=sctx.getImageData(0,0,CELL_W,CELL_H).data;
+      let minX=CELL_W,minY=CELL_H,maxX=0,maxY=0,found=false;
+      for(let y=0;y<CELL_H;y++){
+        for(let x=0;x<CELL_W;x++){
+          const a=data[(y*CELL_W+x)*4+3];
+          if(a>16){
+            found=true;
+            if(x<minX)minX=x;if(y<minY)minY=y;if(x>maxX)maxX=x;if(y>maxY)maxY=y;
+          }
+        }
+      }
+      if(!found) return {sx:col*CELL_W,sy:row*CELL_H,sw:CELL_W,sh:CELL_H};
+      const w=Math.max(1,maxX-minX+1), h=Math.max(1,maxY-minY+1);
+      const px=Math.max(2,Math.round(w*.04)), py=Math.max(2,Math.round(h*.04));
+      minX=Math.max(0,minX-px);minY=Math.max(0,minY-py);
+      maxX=Math.min(CELL_W-1,maxX+px);maxY=Math.min(CELL_H-1,maxY+py);
+      return {
+        sx:col*CELL_W+minX,
+        sy:row*CELL_H+minY,
+        sw:maxX-minX+1,
+        sh:maxY-minY+1
+      };
+    });
+  }
+
   atlas.onload=()=>{
-    atlasReady = atlas.naturalWidth===1024 && atlas.naturalHeight===768;
-    if(!atlasReady) console.warn("DIGUL menu atlas rejected; using procedural fallback", atlas.naturalWidth, atlas.naturalHeight);
+    atlasReady=atlas.naturalWidth===ATLAS_W && atlas.naturalHeight===ATLAS_H;
+    atlasFailed=!atlasReady;
+    if(atlasReady) computeBounds();
+    else console.warn("DIGUL raster atlas size mismatch",atlas.naturalWidth,atlas.naturalHeight);
+    settleReady();
   };
-  atlas.onerror=()=>{ atlasReady=false; };
+  atlas.onerror=()=>{
+    atlasReady=false;
+    atlasFailed=true;
+    settleReady();
+  };
   atlas.src=ATLAS_URL;
 
-  function atlasCell(level){
-    const col=(level|0)%4;
-    const row=Math.floor((level|0)/4);
-    return {sx:col*256,sy:row*256,sw:256,sh:256};
+  function ready(){
+    if(atlasReady||atlasFailed) return Promise.resolve();
+    return new Promise(resolve=>waiters.push(resolve));
+  }
+
+  function crop(level){
+    const safe=clamp(level|0,0,10);
+    return bounds[safe]||{
+      sx:(safe%4)*CELL_W,
+      sy:Math.floor(safe/4)*CELL_H,
+      sw:CELL_W,
+      sh:CELL_H
+    };
+  }
+
+  function drawAtlas(ctx,level,x,y,size,rotation=0,alpha=1){
+    const c=crop(level);
+    const aspect=c.sw/c.sh;
+    let dw=size,dh=size/aspect;
+    if(dh>size){dh=size;dw=size*aspect}
+    const levelBoost=1+Math.min(level,10)*.014;
+    dw*=levelBoost;dh*=levelBoost;
+
+    ctx.save();
+    ctx.globalAlpha=alpha;
+    ctx.translate(x,y);
+    ctx.rotate(rotation);
+    ctx.shadowColor=level>=8?"rgba(112,55,25,.34)":"rgba(72,39,23,.20)";
+    ctx.shadowBlur=level>=8?12:7;
+    ctx.shadowOffsetY=level>=8?5:3;
+    ctx.drawImage(atlas,c.sx,c.sy,c.sw,c.sh,-dw/2,-dh/2,dw,dh);
+    ctx.restore();
   }
 
   function render(level,size=256){
     if(!atlasReady) return proceduralRender(level,size);
     const {canvas,ctx}=setupCanvas(size);
-    const c=atlasCell(clamp(level|0,0,10));
     ctx.clearRect(0,0,size,size);
-    ctx.drawImage(atlas,c.sx,c.sy,c.sw,c.sh,0,0,size,size);
+    drawAtlas(ctx,level,size/2,size/2,size*.96,0,1);
     return canvas;
   }
 
@@ -315,21 +396,13 @@
       proceduralDrawTo(ctx,level,x,y,size,rotation,alpha);
       return;
     }
-    const c=atlasCell(clamp(level|0,0,10));
-    ctx.save();
-    ctx.globalAlpha=alpha;
-    ctx.translate(x,y);
-    ctx.rotate(rotation);
-    ctx.shadowColor=level>=8?"rgba(112,55,25,.28)":"rgba(72,39,23,.16)";
-    ctx.shadowBlur=level>=8?9:5;
-    ctx.shadowOffsetY=3;
-    ctx.drawImage(atlas,c.sx,c.sy,c.sw,c.sh,-size/2,-size/2,size,size);
-    ctx.restore();
+    drawAtlas(ctx,level,x,y,size,rotation,alpha);
   }
 
   window.DigulDessertArt={
     render,
     drawTo,
-    atlasStatus:()=>atlasReady?"ready":"fallback"
+    ready,
+    atlasStatus:()=>atlasReady?"ready":atlasFailed?"fallback":"loading"
   };
 })();
