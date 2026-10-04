@@ -19,6 +19,21 @@
     imageFailed: false
   }));
 
+  const MENU_ATLAS_URL = "./assets/menu/menu-atlas-v2.webp?v=6";
+  const MENU_ATLAS_COLS = 4;
+  const MENU_ATLAS_ROWS = 3;
+  const MENU_ATLAS_CELL_W = 128;
+  const MENU_ATLAS_CELL_H = 128;
+  const menuAtlas = new Image();
+  menuAtlas.decoding = "async";
+  let menuAtlasLoaded = false;
+  menuAtlas.onload = () => {
+    menuAtlasLoaded = menuAtlas.naturalWidth === 512 && menuAtlas.naturalHeight === 384;
+    if (!menuAtlasLoaded) console.warn("DIGUL atlas size mismatch", menuAtlas.naturalWidth, menuAtlas.naturalHeight);
+  };
+  menuAtlas.onerror = () => { menuAtlasLoaded = false; };
+  menuAtlas.src = MENU_ATLAS_URL;
+
   const state = {
     score:0,
     best:0,
@@ -87,11 +102,8 @@
   }
 
   function loadAssets() {
-    if (!ART) return;
-    menus.forEach((menu, index) => {
-      menu.image = ART.render(index, 320);
-      menu.imageFailed = false;
-    });
+    // The production dessert art is the raster sprite atlas above.
+    // ART remains available for the side-game scenes, but DIGUL rendering no longer depends on it.
   }
 
   function appendGeneratedArt(target, level, size) {
@@ -99,18 +111,18 @@
     target.innerHTML = "";
     target.style.width = `${size}px`;
     target.style.height = `${size}px`;
-    if (ART) {
-      const canvas = ART.render(level, size);
-      canvas.className = "dessert-canvas";
-      canvas.setAttribute("aria-label", menus[level].name);
-      target.appendChild(canvas);
-      return;
-    }
-    const fallback = document.createElement("div");
-    fallback.className = "menu-fallback";
-    fallback.style.background = menus[level].tone;
-    fallback.textContent = menus[level].fallback;
-    target.appendChild(fallback);
+
+    const safe = Math.max(0, Math.min(menus.length - 1, level | 0));
+    const col = safe % MENU_ATLAS_COLS;
+    const row = Math.floor(safe / MENU_ATLAS_COLS);
+    const sprite = document.createElement("div");
+    sprite.className = "dessert-sprite";
+    sprite.setAttribute("role", "img");
+    sprite.setAttribute("aria-label", menus[safe].name);
+    sprite.style.backgroundImage = `url("${MENU_ATLAS_URL}")`;
+    sprite.style.backgroundSize = `${MENU_ATLAS_COLS * 100}% ${MENU_ATLAS_ROWS * 100}%`;
+    sprite.style.backgroundPosition = `${col / (MENU_ATLAS_COLS - 1) * 100}% ${row / (MENU_ATLAS_ROWS - 1) * 100}%`;
+    target.appendChild(sprite);
   }
 
   function menuThumb(target, level, size = 48) {
@@ -362,7 +374,6 @@
   }
 
   async function beginGame() {
-    await ART?.ready?.();
     clearItems();
     state.gameId = EXP.newGameId();
     state.eventSeq = 0;
@@ -534,16 +545,32 @@
   function drawMenu(level, x, y, angle = 0, alpha = 1) {
     const menu = menus[level];
     const radius = menu.radius;
-    const size = radius * (3.10 + Math.min(level, 10) * 0.045);
-    if (ART?.drawTo) {
-      ART.drawTo(ctx, level, x, y, size, angle, alpha);
-      return;
-    }
+    const size = radius * (3.28 + Math.min(level, 10) * 0.055);
     ctx.save();
     ctx.globalAlpha = alpha;
     ctx.translate(x, y);
     ctx.rotate(angle);
-    drawFallback(menu, radius);
+
+    if (menuAtlasLoaded) {
+      const col = level % MENU_ATLAS_COLS;
+      const row = Math.floor(level / MENU_ATLAS_COLS);
+      ctx.shadowColor = level >= 8 ? "rgba(113,55,24,.34)" : "rgba(74,39,21,.22)";
+      ctx.shadowBlur = level >= 8 ? 11 : 6;
+      ctx.shadowOffsetY = level >= 8 ? 5 : 3;
+      ctx.drawImage(
+        menuAtlas,
+        col * MENU_ATLAS_CELL_W,
+        row * MENU_ATLAS_CELL_H,
+        MENU_ATLAS_CELL_W,
+        MENU_ATLAS_CELL_H,
+        -size / 2,
+        -size / 2,
+        size,
+        size
+      );
+    } else {
+      drawFallback(menu, radius);
+    }
     ctx.restore();
   }
 
