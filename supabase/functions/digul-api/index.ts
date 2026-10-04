@@ -53,28 +53,37 @@ function route(url: URL) {
 }
 
 async function leaderboard(storeId: string, weekKey: string, playerHash: string) {
-  const { data, error } = await db
+  const { data: top, error: topError } = await db
     .from("digul_weekly_ranked")
     .select("rank,player_hash,nickname,score,achieved_at")
     .eq("store_id", storeId)
     .eq("week_key", weekKey)
     .order("rank", { ascending:true })
-    .limit(100);
-  if (error) throw error;
-  const rows = (data ?? []).map((row: any) => ({
+    .limit(20);
+  if (topError) throw topError;
+
+  const { data: mine, error: mineError } = await db
+    .from("digul_weekly_ranked")
+    .select("rank,player_hash,nickname,score,achieved_at")
+    .eq("store_id", storeId)
+    .eq("week_key", weekKey)
+    .eq("player_hash", playerHash)
+    .maybeSingle();
+  if (mineError) throw mineError;
+
+  const rows = (top ?? []).map((row: any) => ({
     rank:Number(row.rank),
     playerId:"",
     nickname:String(row.nickname),
     score:Number(row.score),
     mine:row.player_hash === playerHash
   }));
-  const mine = (data ?? []).find((row: any) => row.player_hash === playerHash);
   return {
     weekKey,
     myRank:mine ? Number(mine.rank) : null,
     myBest:mine ? Number(mine.score) : 0,
     topScore:rows.length ? Number(rows[0].score) : 0,
-    rows:rows.slice(0, 20)
+    rows
   };
 }
 
