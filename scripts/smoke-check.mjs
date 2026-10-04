@@ -32,7 +32,7 @@ const sandbox = { window: {} };
 vm.runInNewContext(configSource, sandbox);
 const config = sandbox.window.DIGUL_CONFIG;
 if (!config) throw new Error("DIGUL_CONFIG not found");
-if (config.version !== "1.3.0") throw new Error("Unexpected UI version");
+if (config.version !== "1.4.0") throw new Error("Unexpected UI version");
 if (!Array.isArray(config.menus) || config.menus.length !== 11) throw new Error("Exactly 11 menu stages are required");
 
 config.menus.forEach((menu, index) => {
@@ -52,7 +52,7 @@ for (const script of scriptOrder) {
   cursor = next;
 }
 
-if (!dessertArt.includes("window.DigulDessertArt")) throw new Error("Generated dessert art engine missing");
+if (!dessertArt.includes("window.DigulDessertArt")) throw new Error("Dessert art engine missing");\nif (!dessertArt.includes("menu-atlas-v2.webp")) throw new Error("High-quality raster menu atlas missing from renderer");
 if (!sideGames.includes("openSouffleButton") || !sideGames.includes("openMysteryButton")) throw new Error("Side game wiring missing");
 
 console.log("CAFFIEND PLAY static smoke checks passed.");
