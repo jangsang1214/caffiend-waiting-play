@@ -1,5 +1,5 @@
 window.DIGUL_CONFIG = {
-  version: "1.5.1",
+  version: "1.6.0",
   gameName: "디굴디굴",
   subtitle: "디저트가 데굴데굴",
   timezone: "Asia/Seoul",
@@ -41,7 +41,8 @@ window.DIGUL_CONFIG = {
     maxEventBuffer: 80
   },
   assets: {
-    base: "assets/menu/"
+    base: "assets/menu/",
+    renderer: "raster-atlas-v2"
   },
   menus: [
     { level:1,  name:"로투스 수플레",      points:0,  diameter:1.00, file:"로투스 수플레.png",       fallback:"L", tone:"#D79B61" },
