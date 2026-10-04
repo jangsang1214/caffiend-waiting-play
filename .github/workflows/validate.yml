@@ -19,12 +19,16 @@ jobs:
           node --check experience.js
           node --check leaderboard.js
           node --check analytics.js
+          node --check dessert-art.js
           node --check game.js
+          node --check side-games.js
       - name: Check required files
         run: |
           test -f index.html
           test -f style.css
           test -f README.md
+          test -f dessert-art.js
+          test -f side-games.js
           test -f assets/menu/README.md
           test -f supabase/migrations/002_digul.sql
           test -f supabase/functions/digul-api/index.ts
