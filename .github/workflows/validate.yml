@@ -1,4 +1,4 @@
-name: Validate CAFFIEND MOMENTS
+name: Validate DIGUL DIGUL
 
 on:
   push:
@@ -20,8 +20,16 @@ jobs:
           node --check leaderboard.js
           node --check analytics.js
           node --check game.js
-      - name: Check required static files
+      - name: Check required files
         run: |
           test -f index.html
           test -f style.css
           test -f README.md
+          test -f assets/menu/README.md
+          test -f supabase/migrations/002_digul.sql
+          test -f supabase/functions/digul-api/index.ts
+      - name: Check DIGUL configuration
+        run: |
+          grep -q 'gameName: "디굴디굴"' config.js
+          grep -q 'period: "weekly"' config.js
+          grep -q 'completionBonus: 150' config.js
