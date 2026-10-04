@@ -33,7 +33,7 @@ const sandbox = { window: {} };
 vm.runInNewContext(configSource, sandbox);
 const config = sandbox.window.DIGUL_CONFIG;
 if (!config) throw new Error("DIGUL_CONFIG not found");
-if (config.version !== "1.6.0") throw new Error("Unexpected UI version");
+if (config.version !== "1.6.1") throw new Error("Unexpected UI version");
 if (!Array.isArray(config.menus) || config.menus.length !== 11) throw new Error("Exactly 11 menu stages are required");
 
 config.menus.forEach((menu, index) => {
@@ -54,9 +54,9 @@ for (const script of scriptOrder) {
 }
 
 if (!dessertArt.includes("window.DigulDessertArt")) throw new Error("Dessert art engine missing");
-if (!dessertArt.includes("menu-atlas-v2.webp")) throw new Error("High-quality raster menu atlas missing from renderer");
-if (!dessertArt.includes("atlasStatus")) throw new Error("Raster sanity fallback missing");
-if (!dessertArt.includes("ATLAS_W=512") || !dessertArt.includes("ATLAS_H=384")) throw new Error("Expected real 512x384 dessert atlas renderer");
+if (!dessertArt.includes("proceduralRender")) throw new Error("Procedural raster dessert renderer missing");
+if (dessertArt.includes("menu-atlas-v2.webp")) throw new Error("Broken fish atlas must not be referenced by dessert renderer");
+if (!dessertArt.includes('atlasStatus:()=>"disabled"')) throw new Error("Legacy atlas path must stay disabled");
 if (!sideGames.includes("openSouffleButton") || !sideGames.includes("openMysteryButton")) throw new Error("Side game wiring missing");
 if (!spriteRenderer.includes("window.DigulSpriteRenderer")) throw new Error("Unified DIGUL sprite renderer missing");
 if (!spriteRenderer.includes("selfTest")) throw new Error("Sprite renderer self-test missing");
