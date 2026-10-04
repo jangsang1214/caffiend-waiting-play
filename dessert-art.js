@@ -279,7 +279,7 @@
   }
 
   function proceduralDrawTo(ctx,level,x,y,size,rotation=0,alpha=1){
-    const art=proceduralRender(level,320);
+    const art=proceduralRender(level,512);
     ctx.save();ctx.globalAlpha=alpha;ctx.translate(x,y);ctx.rotate(rotation);
     ctx.drawImage(art,-size/2,-size/2,size,size);ctx.restore();
   }
