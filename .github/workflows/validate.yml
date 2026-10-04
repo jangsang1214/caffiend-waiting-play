@@ -33,3 +33,5 @@ jobs:
           grep -q 'gameName: "디굴디굴"' config.js
           grep -q 'period: "weekly"' config.js
           grep -q 'completionBonus: 150' config.js
+      - name: Run static smoke checks
+        run: node scripts/smoke-check.mjs
