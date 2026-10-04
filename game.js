@@ -239,7 +239,9 @@
       removeBodySprite(body);
       Composite.remove(world, body);
     });
-    els.spriteLayer.innerHTML = "";
+    els.spriteLayer.querySelectorAll(".physics-dessert").forEach(el => el.remove());
+    els.dropSprite.innerHTML = "";
+    els.dropSprite.classList.remove("is-visible");
     mergeQueue.length = 0;
     fx.length = 0;
   }
