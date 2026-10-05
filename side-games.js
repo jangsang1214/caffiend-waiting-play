@@ -45,113 +45,11 @@
     mountArt($("homeDigulArt"),0,92);
   }
 
+  window.CaffiendScreens={showOnly,ensureNickname,mountArt};
+
   document.querySelectorAll("[data-home-from]").forEach(btn=>{
     btn.addEventListener("click",()=>showOnly("home"));
   });
-
-  /* Soufflé maker */
-  const souffle = {
-    step:1,
-    whisk:0,
-    ovenScore:0,
-    topping:null,
-    anim:0,
-    needlePos:0,
-    running:false
-  };
-
-  function setSouffleStep(step){
-    souffle.step=step;
-    $("souffleStepBadge").textContent=`${step} / 3`;
-    document.querySelectorAll(".souffle-progress i").forEach((el,i)=>el.classList.toggle("on",i<step));
-    ["whiskScene","ovenScene","toppingScene"].forEach((id,i)=>$(id).classList.toggle("active",i===step-1));
-    const copy=[
-      ["STEP 1","폭신하게 휘저어!"],
-      ["STEP 2","가장 높을 때 TAP!"],
-      ["STEP 3","오늘의 토핑 하나"]
-    ][step-1];
-    $("souffleInstruction").innerHTML=`<small>${copy[0]}</small><strong>${copy[1]}</strong>`;
-    if(step===2) startOvenTiming();
-  }
-
-  function resetSouffle(){
-    souffle.step=1; souffle.whisk=0; souffle.ovenScore=0; souffle.topping=null; souffle.running=false;
-    cancelAnimationFrame(souffle.anim);
-    $("souffleResult").hidden=true;
-    $("souffleInstruction").hidden=false;
-    document.querySelector(".souffle-stage").hidden=false;
-    $("whiskMeter").style.width="0%";
-    $("meringueCloud").style.transform="scale(.72)";
-    $("finishSouffleButton").disabled=true;
-    document.querySelectorAll(".topping-picks button").forEach(b=>b.classList.remove("selected"));
-    $("souffleFinalArt").innerHTML="";
-    setSouffleStep(1);
-  }
-
-  function startOvenTiming(){
-    souffle.running=true;
-    const started=performance.now();
-    const loop=now=>{
-      if(!souffle.running) return;
-      const phase=((now-started)%2200)/2200;
-      const p=phase<.5?phase*200:(1-phase)*200;
-      souffle.needlePos=p;
-      $("timingNeedle").style.left=`${p}%`;
-      const rise=.72+(1-Math.abs(p-50)/50)*.34;
-      $("souffleRise").style.transform=`scale(${rise})`;
-      souffle.anim=requestAnimationFrame(loop);
-    };
-    souffle.anim=requestAnimationFrame(loop);
-  }
-
-  $("openSouffleButton").addEventListener("click",()=>{
-    if(!ensureNickname()) return;
-    showOnly("souffle");
-    resetSouffle();
-    ANALYTICS?.track?.("souffle_open");
-  });
-
-  $("whiskButton").addEventListener("click",()=>{
-    if(souffle.step!==1) return;
-    souffle.whisk=Math.min(12,souffle.whisk+1);
-    const pct=souffle.whisk/12*100;
-    $("whiskMeter").style.width=`${pct}%`;
-    $("meringueCloud").style.transform=`scale(${.72+pct/360}) rotate(${souffle.whisk%2?2:-2}deg)`;
-    if(souffle.whisk>=12) setTimeout(()=>setSouffleStep(2),250);
-  });
-
-  $("ovenTapButton").addEventListener("click",()=>{
-    if(souffle.step!==2) return;
-    souffle.running=false;
-    cancelAnimationFrame(souffle.anim);
-    souffle.ovenScore=Math.max(0,Math.round(100-Math.abs(souffle.needlePos-50)*2));
-    setTimeout(()=>setSouffleStep(3),220);
-  });
-
-  document.querySelectorAll(".topping-picks button").forEach(btn=>{
-    btn.addEventListener("click",()=>{
-      souffle.topping=btn.dataset.topping;
-      document.querySelectorAll(".topping-picks button").forEach(b=>b.classList.toggle("selected",b===btn));
-      const map={peach:4,choco:6,sesame:3,lotus:0};
-      mountArt($("souffleFinalArt"),map[souffle.topping],200);
-      $("finishSouffleButton").disabled=false;
-    });
-  });
-
-  $("finishSouffleButton").addEventListener("click",()=>{
-    if(!souffle.topping) return;
-    const map={peach:4,choco:6,sesame:3,lotus:0};
-    const score=500+souffle.whisk*25+souffle.ovenScore*5;
-    document.querySelector(".souffle-stage").hidden=true;
-    $("souffleInstruction").hidden=true;
-    $("souffleResult").hidden=false;
-    $("souffleScore").textContent=score.toLocaleString("ko-KR");
-    $("souffleResultCopy").textContent=souffle.ovenScore>=82?"완벽하게 부풀었어요!":souffle.ovenScore>=55?"폭신하게 완성!":"조금 아쉽지만 맛있어요!";
-    mountArt($("souffleResultArt"),map[souffle.topping],220);
-    ANALYTICS?.track?.("souffle_finish",{score,ovenScore:souffle.ovenScore,topping:souffle.topping});
-  });
-
-  $("retrySouffleButton").addEventListener("click",resetSouffle);
 
   /* Mystery */
   const guests=[
@@ -217,16 +115,16 @@
 
   function guessMystery(guest){finishMystery(guest===mystery.answer,guest)}
 
-  $("openMysteryButton").addEventListener("click",()=>{
+  $("openMysteryButton")?.addEventListener("click",()=>{
     if(!ensureNickname()) return;
     showOnly("mystery");resetMystery();
     ANALYTICS?.track?.("mystery_open");
   });
 
-  $("nextClueButton").addEventListener("click",()=>{
+  $("nextClueButton")?.addEventListener("click",()=>{
     if(mystery.clueIndex<2){mystery.clueIndex++;showClue();}
   });
-  $("retryMysteryButton").addEventListener("click",resetMystery);
+  $("retryMysteryButton")?.addEventListener("click",resetMystery);
 
   decorateHome();
 })();
