@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@500;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./style.css?v=1.7.1">
+  <link rel="stylesheet" href="./style.css?v=1.8.0">
 </head>
 <body>
   <main class="app" aria-live="polite">
@@ -43,43 +43,23 @@
 
         <div class="game-select-list">
           <button id="startButton" class="game-select-card card-digul" type="button">
-            <span class="game-card-art" data-art="digul">
-              <span id="homeDigulArt" class="home-dessert-art"></span>
-            </span>
-            <span class="game-card-copy">
-              <small>01 · MERGE</small>
-              <strong>디굴디굴</strong>
-              <em>같은 디저트를 합쳐요</em>
-            </span>
-            <span class="game-card-arrow">›</span>
-            <span id="weekLabelEntry" class="game-card-badge">이번 주</span>
+            <span class="game-card-art" data-art="digul"><span id="homeDigulArt" class="home-dessert-art"></span></span>
+            <span class="game-card-copy"><small>01 · MERGE</small><strong>디굴디굴</strong><em>같은 디저트를 합쳐요</em></span>
+            <span class="game-card-arrow">›</span><span id="weekLabelEntry" class="game-card-badge">이번 주</span>
           </button>
 
           <button id="openSouffleButton" class="game-select-card card-souffle" type="button">
-            <span class="game-card-art souffle-art">
-              <span class="bowl-art"><i></i><b></b></span>
-            </span>
-            <span class="game-card-copy">
-              <small>02 · MAKE</small>
-              <strong>수플레 만들기</strong>
-              <em>휘젓고 · 굽고 · 올려요</em>
-            </span>
+            <span class="game-card-art souffle-art"><span class="bowl-art"><i></i><b></b></span></span>
+            <span class="game-card-copy"><small>02 · MAKE</small><strong>수플레 만들기</strong><em>내 수플레를 직접 만들어요</em></span>
             <span class="game-card-arrow">›</span>
           </button>
 
           <button id="openMysteryButton" class="game-select-card card-mystery" type="button">
-            <span class="game-card-art mystery-art">
-              <span class="envelope-art"><i>?</i></span>
-            </span>
-            <span class="game-card-copy">
-              <small>03 · MYSTERY</small>
-              <strong>비밀예약자는 누구?</strong>
-              <em>단서를 보고 한 명을 찾아요</em>
-            </span>
+            <span class="game-card-art mystery-art"><span class="envelope-art"><i>?</i></span></span>
+            <span class="game-card-copy"><small>03 · MYSTERY</small><strong>비밀예약자는 누구?</strong><em>단서를 보고 한 명을 찾아요</em></span>
             <span class="game-card-arrow">›</span>
           </button>
         </div>
-
         <p class="home-foot">CAFFIEND PLAY · NO DOWNLOAD</p>
       </div>
     </section>
@@ -87,111 +67,88 @@
     <section id="gameScreen" class="screen game-screen">
       <header class="game-header">
         <button id="digulHomeButton" class="back-button" type="button" aria-label="처음으로">‹</button>
-        <div class="game-logo" aria-label="디굴디굴">
-          <strong>디굴디굴</strong>
-          <small>CAFFIEND</small>
-        </div>
+        <div class="game-logo" aria-label="디굴디굴"><strong>디굴디굴</strong><small>CAFFIEND</small></div>
         <div class="header-actions">
-          <button id="nicknameButton" class="player-chip" type="button" aria-label="닉네임 변경">
-            <i class="leaf-mark" aria-hidden="true"></i>
-            <span id="nicknameDisplay">PLAYER</span>
-          </button>
+          <button id="nicknameButton" class="player-chip" type="button" aria-label="닉네임 변경"><i class="leaf-mark" aria-hidden="true"></i><span id="nicknameDisplay">PLAYER</span></button>
           <button id="pauseButton" class="pause-button" type="button" aria-label="일시정지">Ⅱ</button>
         </div>
       </header>
-
       <section class="hud">
-        <div class="score-card">
-          <div class="hud-label"><i class="leaf-mark" aria-hidden="true"></i><span>스코어</span></div>
-          <strong id="scoreValue">0</strong>
-          <div class="best-line"><span class="crown-mark">♛</span><span>최고</span><b id="personalBestValue">0</b></div>
-        </div>
-        <div class="next-card">
-          <div class="hud-label heart-label"><span>♥</span><span>다음</span></div>
-          <div id="nextPreview" class="next-preview"></div>
-        </div>
+        <div class="score-card"><div class="hud-label"><i class="leaf-mark" aria-hidden="true"></i><span>스코어</span></div><strong id="scoreValue">0</strong><div class="best-line"><span class="crown-mark">♛</span><span>최고</span><b id="personalBestValue">0</b></div></div>
+        <div class="next-card"><div class="hud-label heart-label"><span>♥</span><span>다음</span></div><div id="nextPreview" class="next-preview"></div></div>
       </section>
-
       <section class="play-area">
         <div class="board-wrap">
           <div class="bowl-rim" aria-hidden="true"></div>
           <canvas id="gameCanvas" aria-label="디저트 합체 게임"></canvas>
-          <div id="spriteLayer" class="sprite-layer" aria-hidden="true">
-            <div id="dropSprite" class="drop-sprite" aria-hidden="true"></div>
-          </div>
+          <div id="spriteLayer" class="sprite-layer" aria-hidden="true"><div id="dropSprite" class="drop-sprite" aria-hidden="true"></div></div>
           <div id="dropGuide" class="drop-guide">끌고 · 놓기</div>
         </div>
         <div class="rank-strip">
           <div id="connectionPill" class="live-state is-local"><i></i><strong id="connectionText">내 기록</strong></div>
           <div class="rank-center"><span>내 순위</span><strong id="myRankValue">–</strong></div>
-          <div class="rank-best"><span>이번 주 최고</span><strong id="topScoreValue">0</strong></div>
-          <span id="weekLabel" class="sr-only">이번 주</span>
+          <div class="rank-best"><span>이번 주 최고</span><strong id="topScoreValue">0</strong></div><span id="weekLabel" class="sr-only">이번 주</span>
         </div>
       </section>
-
       <footer class="bottom-actions">
-        <button id="recipeButton" class="footer-button" type="button">
-          <span id="recipeButtonPreview" class="action-preview" aria-hidden="true"></span>
-          <strong>합체 순서</strong><i>›</i>
-        </button>
-        <button id="rankingButton" class="footer-button footer-button-rank" type="button">
-          <span class="trophy-mark">★</span><strong>실시간 순위</strong><i>›</i>
-        </button>
+        <button id="recipeButton" class="footer-button" type="button"><span id="recipeButtonPreview" class="action-preview" aria-hidden="true"></span><strong>합체 순서</strong><i>›</i></button>
+        <button id="rankingButton" class="footer-button footer-button-rank" type="button"><span class="trophy-mark">★</span><strong>실시간 순위</strong><i>›</i></button>
       </footer>
     </section>
 
-    <section id="souffleScreen" class="screen side-game-screen">
-      <header class="side-header">
-        <button class="back-button" data-home-from="souffle" type="button">‹</button>
-        <div><small>CAFFIEND PLAY</small><h2>수플레 만들기</h2></div>
-        <div id="souffleStepBadge" class="step-badge">1 / 3</div>
+    <section id="souffleScreen" class="screen souffle-game-screen">
+      <header class="souffle-header">
+        <button class="back-button" data-home-from="souffle" type="button" aria-label="처음으로">‹</button>
+        <div class="souffle-brand"><small>CAFFIEND PLAY</small><h2>수플레 만들기</h2></div>
+        <button id="souffleSoundButton" class="sound-button" type="button" aria-label="사운드 끄기">♪</button>
       </header>
 
-      <div class="souffle-progress"><i class="on"></i><i></i><i></i></div>
-
-      <section class="souffle-stage">
-        <div id="souffleInstruction" class="side-instruction">
-          <small>STEP 1</small><strong>폭신하게 휘저어!</strong>
+      <section id="souffleSelectPanel" class="souffle-panel souffle-select-panel">
+        <div class="souffle-season-card">
+          <div class="season-window autumn"><i></i><b></b></div>
+          <div><small>AUTUMN · CAFFIEND</small><strong>어떤 수플레를 기다리고 있나요?</strong></div>
         </div>
-
-        <div id="whiskScene" class="souffle-scene active">
-          <div class="mixing-bowl">
-            <div id="meringueCloud" class="meringue-cloud"></div>
-            <span class="whisk-stick"></span>
-          </div>
-          <button id="whiskButton" class="big-action-button" type="button">휘젓기</button>
-          <div class="mini-meter"><i id="whiskMeter"></i></div>
-        </div>
-
-        <div id="ovenScene" class="souffle-scene">
-          <div class="oven-card">
-            <div id="souffleRise" class="souffle-rise-art"></div>
-            <div class="oven-window"></div>
-          </div>
-          <div class="timing-track"><span class="sweet-zone"></span><i id="timingNeedle"></i></div>
-          <button id="ovenTapButton" class="big-action-button" type="button">지금!</button>
-        </div>
-
-        <div id="toppingScene" class="souffle-scene">
-          <div id="souffleFinalArt" class="final-souffle-art"></div>
-          <div class="topping-picks">
-            <button type="button" data-topping="peach">🍑</button>
-            <button type="button" data-topping="choco">🍫</button>
-            <button type="button" data-topping="sesame">●</button>
-            <button type="button" data-topping="lotus">◆</button>
-          </div>
-          <button id="finishSouffleButton" class="big-action-button" type="button" disabled>완성</button>
+        <div id="souffleMenuGrid" class="souffle-menu-grid"></div>
+        <div class="souffle-select-footer">
+          <span id="souffleSelectedName">메뉴를 골라주세요</span>
+          <button id="souffleContinueButton" class="souffle-primary" type="button" disabled>다음</button>
         </div>
       </section>
 
-      <section id="souffleResult" class="side-result" hidden>
-        <div id="souffleResultArt" class="side-result-art"></div>
-        <small>MY SOUFFLÉ</small>
-        <strong id="souffleScore">0</strong>
-        <p id="souffleResultCopy">폭신함 완성!</p>
-        <div class="result-actions">
-          <button id="retrySouffleButton" class="secondary-button" type="button">다시</button>
-          <button class="primary-flat-button" data-home-from="souffle" type="button">처음으로</button>
+      <section id="souffleTutorialPanel" class="souffle-panel souffle-tutorial" hidden>
+        <div class="tutorial-hero"><small>4 GESTURES</small><strong>손가락만 쓰면 돼요</strong></div>
+        <div class="gesture-grid">
+          <div><i class="gesture-dot tap"></i><strong>TAP</strong><span>톡</span></div>
+          <div><i class="gesture-dot drag"></i><strong>DRAG</strong><span>옮기기</span></div>
+          <div><i class="gesture-dot swipe"></i><strong>SWIPE</strong><span>슥</span></div>
+          <div><i class="gesture-dot stir"></i><strong>STIR</strong><span>빙글</span></div>
+        </div>
+        <p>새 조작이 나오면 화면이 알려줘요.</p>
+        <button id="souffleTutorialStart" class="souffle-primary wide" type="button">만들기 시작</button>
+      </section>
+
+      <section id="soufflePlayPanel" class="souffle-panel souffle-play-panel" hidden>
+        <div class="souffle-hud">
+          <div><small>TIME</small><strong id="souffleTimer">04:30</strong></div>
+          <div class="souffle-step-copy"><small id="souffleStepBadge">1 / 12</small><strong id="souffleStepTitle">달걀 분리</strong><span id="souffleStepHint">톡! 깨고 노른자를 옮겨요</span></div>
+          <div><small>SCORE</small><strong id="souffleScoreLive">0</strong></div>
+        </div>
+        <div class="souffle-progress-v2"><i id="souffleProgressFill"></i></div>
+        <div id="souffleWorkArea" class="souffle-work-area"></div>
+        <div id="souffleToast" class="souffle-toast"></div>
+      </section>
+
+      <section id="souffleResultPanel" class="souffle-panel souffle-result-v2" hidden>
+        <div id="souffleResultArt" class="souffle-result-art"></div>
+        <small id="souffleResultMenu">MY SOUFFLÉ</small>
+        <strong id="souffleResultGrade">MASTER</strong>
+        <b id="souffleFinalScore">0</b>
+        <div class="souffle-result-stats"><div><span>PLAY</span><strong id="souffleResultTime">00:00</strong></div><div><span>TIME</span><strong id="souffleResultRemain">00:00</strong></div></div>
+        <div id="souffleResultList" class="souffle-result-list"></div>
+        <div class="result-actions three">
+          <button id="souffleRetryButton" class="secondary-button" type="button">다시</button>
+          <button id="souffleReselectButton" class="secondary-button" type="button">메뉴</button>
+          <button class="primary-flat-button" data-home-from="souffle" type="button">종료</button>
         </div>
       </section>
     </section>
@@ -202,99 +159,33 @@
         <div><small>CAFFIEND PLAY</small><h2>비밀예약자는 누구?</h2></div>
         <div id="mysteryTimer" class="step-badge">30</div>
       </header>
-
       <section id="mysteryPlay" class="mystery-play">
         <div class="mystery-envelope"><span>?</span></div>
-        <div class="clue-card">
-          <small>CLUE <b id="clueIndex">1</b> / 3</small>
-          <strong id="clueText">단서를 확인하세요.</strong>
-          <button id="nextClueButton" class="clue-next" type="button">다음 단서 ›</button>
-        </div>
-        <div id="suspectGrid" class="suspect-grid"></div>
-        <p class="mystery-hint">예약자라고 생각되는 손님을 눌러주세요.</p>
+        <div class="clue-card"><small>CLUE <b id="clueIndex">1</b> / 3</small><strong id="clueText">단서를 확인하세요.</strong><button id="nextClueButton" class="clue-next" type="button">다음 단서 ›</button></div>
+        <div id="suspectGrid" class="suspect-grid"></div><p class="mystery-hint">예약자라고 생각되는 손님을 눌러주세요.</p>
       </section>
-
       <section id="mysteryResult" class="side-result" hidden>
-        <div class="mystery-result-mark">?</div>
-        <small>SECRET GUEST</small>
-        <strong id="mysteryResultTitle">정답!</strong>
-        <p id="mysteryResultCopy"></p>
-        <div class="result-actions">
-          <button id="retryMysteryButton" class="secondary-button" type="button">새 사건</button>
-          <button class="primary-flat-button" data-home-from="mystery" type="button">처음으로</button>
-        </div>
+        <div class="mystery-result-mark">?</div><small>SECRET GUEST</small><strong id="mysteryResultTitle">정답!</strong><p id="mysteryResultCopy"></p>
+        <div class="result-actions"><button id="retryMysteryButton" class="secondary-button" type="button">새 사건</button><button class="primary-flat-button" data-home-from="mystery" type="button">처음으로</button></div>
       </section>
     </section>
 
-    <section id="resultOverlay" class="overlay" aria-hidden="true">
-      <div class="result-card">
-        <p class="eyebrow">GAME OVER</p>
-        <h2 id="resultScore">0</h2>
-        <div class="result-stats">
-          <div><span>이번 주 BEST</span><strong id="resultBest">0</strong></div>
-          <div><span>순위</span><strong id="resultRank">–</strong></div>
-        </div>
-        <div class="highest-menu">
-          <span>최고 메뉴</span>
-          <div id="resultMenuThumb" class="mini-dessert"></div>
-          <strong id="resultMenuName">로투스 수플레</strong>
-        </div>
-        <button id="restartButton" class="primary-button" type="button">다시 하기</button>
-      </div>
-    </section>
-
-    <section id="pauseOverlay" class="overlay" aria-hidden="true">
-      <div class="pause-card">
-        <p class="eyebrow">PAUSE</p><h2>잠깐 멈춤</h2>
-        <button id="resumeButton" class="primary-button" type="button">계속</button>
-      </div>
-    </section>
-
-    <section id="nicknameOverlay" class="overlay" aria-hidden="true">
-      <div class="panel-card compact">
-        <button class="close-button" data-close="nicknameOverlay" type="button">×</button>
-        <p class="eyebrow">PLAYER</p><h2>닉네임</h2>
-        <label class="nickname-field"><input id="nicknameEditInput" maxlength="10" inputmode="text" autocomplete="nickname"></label>
-        <p id="nicknameEditError" class="field-error"></p>
-        <button id="saveNicknameButton" class="primary-button" type="button">저장</button>
-      </div>
-    </section>
-
-    <section id="recipeOverlay" class="sheet" aria-hidden="true">
-      <div class="sheet-backdrop" data-close="recipeOverlay"></div>
-      <div class="sheet-panel">
-        <div class="sheet-handle"></div>
-        <div class="sheet-title">
-          <div><p class="eyebrow">MERGE</p><h2>합체 순서</h2></div>
-          <button class="close-button" data-close="recipeOverlay" type="button">×</button>
-        </div>
-        <div id="recipeList" class="recipe-list"></div>
-      </div>
-    </section>
-
-    <section id="rankingOverlay" class="sheet" aria-hidden="true">
-      <div class="sheet-backdrop" data-close="rankingOverlay"></div>
-      <div class="sheet-panel ranking-sheet">
-        <div class="sheet-handle"></div>
-        <div class="ranking-hero">
-          <div class="ranking-cup">★</div>
-          <div><p class="eyebrow">LIVE · WEEKLY</p><h2>실시간 순위</h2><small>이번 주 최고 기록 기준</small></div>
-          <button class="close-button" data-close="rankingOverlay" type="button">×</button>
-        </div>
-        <div id="rankingStatus" class="ranking-status">불러오는 중</div>
-        <div id="rankingList" class="ranking-list"></div>
-      </div>
-    </section>
+    <section id="resultOverlay" class="overlay" aria-hidden="true"><div class="result-card"><p class="eyebrow">GAME OVER</p><h2 id="resultScore">0</h2><div class="result-stats"><div><span>이번 주 BEST</span><strong id="resultBest">0</strong></div><div><span>순위</span><strong id="resultRank">–</strong></div></div><div class="highest-menu"><span>최고 메뉴</span><div id="resultMenuThumb" class="mini-dessert"></div><strong id="resultMenuName">로투스 수플레</strong></div><button id="restartButton" class="primary-button" type="button">다시 하기</button></div></section>
+    <section id="pauseOverlay" class="overlay" aria-hidden="true"><div class="pause-card"><p class="eyebrow">PAUSE</p><h2>잠깐 멈춤</h2><button id="resumeButton" class="primary-button" type="button">계속</button></div></section>
+    <section id="nicknameOverlay" class="overlay" aria-hidden="true"><div class="panel-card compact"><button class="close-button" data-close="nicknameOverlay" type="button">×</button><p class="eyebrow">PLAYER</p><h2>닉네임</h2><label class="nickname-field"><input id="nicknameEditInput" maxlength="10" inputmode="text" autocomplete="nickname"></label><p id="nicknameEditError" class="field-error"></p><button id="saveNicknameButton" class="primary-button" type="button">저장</button></div></section>
+    <section id="recipeOverlay" class="sheet" aria-hidden="true"><div class="sheet-backdrop" data-close="recipeOverlay"></div><div class="sheet-panel"><div class="sheet-handle"></div><div class="sheet-title"><div><p class="eyebrow">MERGE</p><h2>합체 순서</h2></div><button class="close-button" data-close="recipeOverlay" type="button">×</button></div><div id="recipeList" class="recipe-list"></div></div></section>
+    <section id="rankingOverlay" class="sheet" aria-hidden="true"><div class="sheet-backdrop" data-close="rankingOverlay"></div><div class="sheet-panel ranking-sheet"><div class="sheet-handle"></div><div class="ranking-hero"><div class="ranking-cup">★</div><div><p class="eyebrow">LIVE · WEEKLY</p><h2>실시간 순위</h2><small>이번 주 최고 기록 기준</small></div><button class="close-button" data-close="rankingOverlay" type="button">×</button></div><div id="rankingStatus" class="ranking-status">불러오는 중</div><div id="rankingList" class="ranking-list"></div></div></section>
   </main>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
-  <script src="./config.js?v=1.7.1"></script>
-  <script src="./experience.js?v=1.7.1"></script>
-  <script src="./leaderboard.js?v=1.7.1"></script>
-  <script src="./analytics.js?v=1.7.1"></script>
-  <script src="./dessert-art.js?v=1.7.1"></script>
-  <script src="./sprite-renderer.js?v=1.7.1"></script>
-  <script src="./game.js?v=1.7.1"></script>
-  <script src="./side-games.js?v=1.7.1"></script>
+  <script src="./config.js?v=1.8.0"></script>
+  <script src="./experience.js?v=1.8.0"></script>
+  <script src="./leaderboard.js?v=1.8.0"></script>
+  <script src="./analytics.js?v=1.8.0"></script>
+  <script src="./dessert-art.js?v=1.8.0"></script>
+  <script src="./sprite-renderer.js?v=1.8.0"></script>
+  <script src="./game.js?v=1.8.0"></script>
+  <script src="./side-games.js?v=1.8.0"></script>
+  <script src="./souffle-game.js?v=1.8.0"></script>
 </body>
 </html>
