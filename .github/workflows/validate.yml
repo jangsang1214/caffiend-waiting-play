@@ -1,4 +1,4 @@
-name: Validate DIGUL DIGUL
+name: Validate CAFFIEND PLAY
 
 on:
   push:
@@ -23,25 +23,32 @@ jobs:
           node --check sprite-renderer.js
           node --check game.js
           node --check side-games.js
+          node --check souffle-service.js
           node --check souffle-game.js
       - name: Check required files
         run: |
           test -f index.html
           test -f style.css
           test -f souffle.css
+          test -f souffle-v2.css
           test -f README.md
           test -f dessert-art.js
           test -f sprite-renderer.js
           test -f side-games.js
+          test -f souffle-service.js
           test -f souffle-game.js
           test -f assets/menu/README.md
           test -f supabase/migrations/002_digul.sql
+          test -f supabase/migrations/004_souffle_mvp.sql
           test -f supabase/functions/digul-api/index.ts
-      - name: Check DIGUL configuration
+          test -f supabase/functions/souffle-api/index.ts
+      - name: Check CAFFIEND configuration
         run: |
+          grep -q 'version: "2.0.0"' config.js
           grep -q 'gameName: "디굴디굴"' config.js
           grep -q 'period: "weekly"' config.js
           grep -q 'completionBonus: 150' config.js
           grep -q 'steps: 12' config.js
+          grep -q 'souffleApi:' config.js
       - name: Run static smoke checks
         run: node scripts/smoke-check.mjs
