@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@500;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./style.css?v=1.8.0">
+  <link rel="stylesheet" href="./style.css?v=2.0.0">
 </head>
 <body>
   <main class="app" aria-live="polite">
@@ -96,7 +96,7 @@
       </footer>
     </section>
 
-    <section id="souffleScreen" class="screen souffle-game-screen">
+    <section id="souffleScreen" class="screen souffle-game-screen" data-season="autumn">
       <header class="souffle-header">
         <button class="back-button" data-home-from="souffle" type="button" aria-label="처음으로">‹</button>
         <div class="souffle-brand"><small>CAFFIEND PLAY</small><h2>수플레 만들기</h2></div>
@@ -105,14 +105,15 @@
 
       <section id="souffleSelectPanel" class="souffle-panel souffle-select-panel">
         <div class="souffle-season-card">
-          <div class="season-window autumn"><i></i><b></b></div>
-          <div><small>AUTUMN · CAFFIEND</small><strong>어떤 수플레를 기다리고 있나요?</strong></div>
+          <div id="souffleSeasonWindow" class="season-window autumn" aria-hidden="true"><i></i><b></b></div>
+          <div class="souffle-season-copy"><small id="souffleSeasonLabel">AUTUMN · CAFFIEND</small><strong>어떤 수플레를 기다리고 있나요?</strong><em id="souffleSeasonMessage">포근하게 익어가는 가을</em></div>
         </div>
         <div id="souffleMenuGrid" class="souffle-menu-grid"></div>
         <div class="souffle-select-footer">
           <span id="souffleSelectedName">메뉴를 골라주세요</span>
           <button id="souffleContinueButton" class="souffle-primary" type="button" disabled>다음</button>
         </div>
+        <div id="souffleSyncState" class="souffle-sync-state"><i></i><span>플레이 기록은 완료 후 저장돼요</span></div>
       </section>
 
       <section id="souffleTutorialPanel" class="souffle-panel souffle-tutorial" hidden>
@@ -133,9 +134,9 @@
           <div class="souffle-step-copy"><small id="souffleStepBadge">1 / 12</small><strong id="souffleStepTitle">달걀 분리</strong><span id="souffleStepHint">톡! 깨고 노른자를 옮겨요</span></div>
           <div><small>SCORE</small><strong id="souffleScoreLive">0</strong></div>
         </div>
-        <div class="souffle-progress-v2"><i id="souffleProgressFill"></i></div>
+        <div id="souffleProgressTrack" class="souffle-progress-v2" role="progressbar" aria-label="수플레 만들기 진행도" aria-valuemin="1" aria-valuemax="12" aria-valuenow="1"><i id="souffleProgressFill"></i></div>
         <div id="souffleWorkArea" class="souffle-work-area"></div>
-        <div id="souffleToast" class="souffle-toast"></div>
+        <div id="souffleToast" class="souffle-toast" role="status" aria-live="polite"></div>
       </section>
 
       <section id="souffleResultPanel" class="souffle-panel souffle-result-v2" hidden>
@@ -144,7 +145,33 @@
         <strong id="souffleResultGrade">MASTER</strong>
         <b id="souffleFinalScore">0</b>
         <div class="souffle-result-stats"><div><span>PLAY</span><strong id="souffleResultTime">00:00</strong></div><div><span>TIME</span><strong id="souffleResultRemain">00:00</strong></div></div>
+        <div class="souffle-result-summary">
+          <div><span>PERFECT</span><strong id="soufflePerfectCount">0</strong></div>
+          <div><span>SLOW MIX</span><strong id="souffleCareCount">0/2</strong></div>
+          <div><span>TIMING</span><strong id="souffleTimingValue">0</strong></div>
+        </div>
         <div id="souffleResultList" class="souffle-result-list"></div>
+        <p class="souffle-reality-note">게임 속 수플레는 완성! 이 화면은 실제 주문 준비 상황과 연동되지 않습니다.</p>
+
+        <section id="souffleFeedback" class="souffle-feedback" aria-labelledby="souffleFeedbackTitle">
+          <div class="souffle-feedback-head">
+            <small>10 SEC FEEDBACK</small>
+            <strong id="souffleFeedbackTitle">플레이 어땠나요?</strong>
+            <p>현장 테스트에서 체감 대기시간과 기대감을 확인하기 위한 3문항이에요.</p>
+          </div>
+          <div class="feedback-question"><span>게임이 재미있었나요?</span><div class="feedback-scale" aria-label="게임 재미 평가">
+            <button type="button" data-feedback-question="fun" data-feedback-value="1" aria-pressed="false">1</button><button type="button" data-feedback-question="fun" data-feedback-value="2" aria-pressed="false">2</button><button type="button" data-feedback-question="fun" data-feedback-value="3" aria-pressed="false">3</button><button type="button" data-feedback-question="fun" data-feedback-value="4" aria-pressed="false">4</button><button type="button" data-feedback-question="fun" data-feedback-value="5" aria-pressed="false">5</button>
+          </div></div>
+          <div class="feedback-question"><span>기다림이 덜 지루하게 느껴졌나요?</span><div class="feedback-scale" aria-label="체감 대기시간 평가">
+            <button type="button" data-feedback-question="wait" data-feedback-value="1" aria-pressed="false">1</button><button type="button" data-feedback-question="wait" data-feedback-value="2" aria-pressed="false">2</button><button type="button" data-feedback-question="wait" data-feedback-value="3" aria-pressed="false">3</button><button type="button" data-feedback-question="wait" data-feedback-value="4" aria-pressed="false">4</button><button type="button" data-feedback-question="wait" data-feedback-value="5" aria-pressed="false">5</button>
+          </div></div>
+          <div class="feedback-question"><span>실제 수플레가 더 기대되나요?</span><div class="feedback-scale" aria-label="수플레 기대감 평가">
+            <button type="button" data-feedback-question="anticipation" data-feedback-value="1" aria-pressed="false">1</button><button type="button" data-feedback-question="anticipation" data-feedback-value="2" aria-pressed="false">2</button><button type="button" data-feedback-question="anticipation" data-feedback-value="3" aria-pressed="false">3</button><button type="button" data-feedback-question="anticipation" data-feedback-value="4" aria-pressed="false">4</button><button type="button" data-feedback-question="anticipation" data-feedback-value="5" aria-pressed="false">5</button>
+          </div></div>
+          <button id="souffleFeedbackSubmit" class="souffle-feedback-submit" type="button" disabled>평가 보내기</button>
+          <p id="souffleFeedbackStatus" class="souffle-feedback-status" role="status"></p>
+        </section>
+
         <div class="result-actions three">
           <button id="souffleRetryButton" class="secondary-button" type="button">다시</button>
           <button id="souffleReselectButton" class="secondary-button" type="button">메뉴</button>
@@ -178,14 +205,15 @@
   </main>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
-  <script src="./config.js?v=1.8.0"></script>
-  <script src="./experience.js?v=1.8.0"></script>
-  <script src="./leaderboard.js?v=1.8.0"></script>
-  <script src="./analytics.js?v=1.8.0"></script>
-  <script src="./dessert-art.js?v=1.8.0"></script>
-  <script src="./sprite-renderer.js?v=1.8.0"></script>
-  <script src="./game.js?v=1.8.0"></script>
-  <script src="./side-games.js?v=1.8.0"></script>
-  <script src="./souffle-game.js?v=1.8.0"></script>
+  <script src="./config.js?v=2.0.0"></script>
+  <script src="./experience.js?v=2.0.0"></script>
+  <script src="./leaderboard.js?v=2.0.0"></script>
+  <script src="./analytics.js?v=2.0.0"></script>
+  <script src="./dessert-art.js?v=2.0.0"></script>
+  <script src="./sprite-renderer.js?v=2.0.0"></script>
+  <script src="./game.js?v=2.0.0"></script>
+  <script src="./side-games.js?v=2.0.0"></script>
+  <script src="./souffle-service.js?v=2.0.0"></script>
+  <script src="./souffle-game.js?v=2.0.0"></script>
 </body>
 </html>
