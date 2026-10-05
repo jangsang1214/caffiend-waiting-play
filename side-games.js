@@ -1,4 +1,9 @@
 (() => {
+  const souffleCss=document.createElement("link");
+  souffleCss.rel="stylesheet";
+  souffleCss.href="./souffle.css?v=1.8.0";
+  document.head.appendChild(souffleCss);
+
   const $ = id => document.getElementById(id);
   const EXP = window.DigulExperience;
   const ART = window.DigulDessertArt;
@@ -41,9 +46,7 @@
     target.appendChild(canvas);
   }
 
-  function decorateHome(){
-    mountArt($("homeDigulArt"),0,92);
-  }
+  function decorateHome(){mountArt($("homeDigulArt"),0,92)}
 
   window.CaffiendScreens={showOnly,ensureNickname,mountArt};
 
@@ -51,7 +54,6 @@
     btn.addEventListener("click",()=>showOnly("home"));
   });
 
-  /* Mystery */
   const guests=[
     {name:"민트손님",mark:"M",seat:"창가",drink:"라떼",dessert:"복숭아 수플레",tone:"#79a889"},
     {name:"달콤손님",mark:"D",seat:"바",drink:"아메리카노",dessert:"로투스 수플레",tone:"#e69a55"},
@@ -61,8 +63,7 @@
     {name:"봄손님",mark:"S",seat:"안쪽",drink:"아메리카노",dessert:"꿀자몽빙수",tone:"#d77f7f"}
   ];
   let mystery={suspects:[],answer:null,clues:[],clueIndex:0,time:30,timer:null,locked:false};
-
-  function shuffled(arr){return [...arr].sort(()=>Math.random()-.5)}
+  const shuffled=arr=>[...arr].sort(()=>Math.random()-.5);
 
   function renderSuspects(){
     const grid=$("suspectGrid");grid.innerHTML="";
@@ -86,44 +87,24 @@
     clearInterval(mystery.timer);
     mystery.suspects=shuffled(guests).slice(0,3);
     mystery.answer=mystery.suspects[Math.floor(Math.random()*3)];
-    mystery.clues=[
-      `예약자는 ${mystery.answer.seat} 자리를 골랐어요.`,
-      `${mystery.answer.drink}를 함께 주문했어요.`,
-      `${mystery.answer.dessert}를 기다리고 있어요.`
-    ];
+    mystery.clues=[`예약자는 ${mystery.answer.seat} 자리를 골랐어요.`,`${mystery.answer.drink}를 함께 주문했어요.`,`${mystery.answer.dessert}를 기다리고 있어요.`];
     mystery.clueIndex=0;mystery.time=30;mystery.locked=false;
-    $("mysteryTimer").textContent="30";
-    $("mysteryResult").hidden=true;$("mysteryPlay").hidden=false;
+    $("mysteryTimer").textContent="30";$("mysteryResult").hidden=true;$("mysteryPlay").hidden=false;
     renderSuspects();showClue();
-    mystery.timer=setInterval(()=>{
-      mystery.time=Math.max(0,mystery.time-1);
-      $("mysteryTimer").textContent=String(mystery.time);
-      if(mystery.time<=0){clearInterval(mystery.timer);finishMystery(false,null);}
-    },1000);
+    mystery.timer=setInterval(()=>{mystery.time=Math.max(0,mystery.time-1);$("mysteryTimer").textContent=String(mystery.time);if(mystery.time<=0){clearInterval(mystery.timer);finishMystery(false,null)}},1000);
   }
 
   function finishMystery(correct,selected){
-    if(mystery.locked) return;
-    mystery.locked=true;clearInterval(mystery.timer);
-    $("mysteryPlay").hidden=true;$("mysteryResult").hidden=false;
+    if(mystery.locked)return;
+    mystery.locked=true;clearInterval(mystery.timer);$("mysteryPlay").hidden=true;$("mysteryResult").hidden=false;
     $("mysteryResultTitle").textContent=correct?"정답!":"아쉽다!";
-    $("mysteryResultCopy").textContent=correct
-      ? `${mystery.answer.name}이 비밀예약자였어요. · ${mystery.time}초 남음`
-      : `비밀예약자는 ${mystery.answer.name}이었어요.`;
+    $("mysteryResultCopy").textContent=correct?`${mystery.answer.name}이 비밀예약자였어요. · ${mystery.time}초 남음`:`비밀예약자는 ${mystery.answer.name}이었어요.`;
     ANALYTICS?.track?.("mystery_finish",{correct,time:mystery.time,selected:selected?.name||""});
   }
-
   function guessMystery(guest){finishMystery(guest===mystery.answer,guest)}
 
-  $("openMysteryButton")?.addEventListener("click",()=>{
-    if(!ensureNickname()) return;
-    showOnly("mystery");resetMystery();
-    ANALYTICS?.track?.("mystery_open");
-  });
-
-  $("nextClueButton")?.addEventListener("click",()=>{
-    if(mystery.clueIndex<2){mystery.clueIndex++;showClue();}
-  });
+  $("openMysteryButton")?.addEventListener("click",()=>{if(!ensureNickname())return;showOnly("mystery");resetMystery();ANALYTICS?.track?.("mystery_open")});
+  $("nextClueButton")?.addEventListener("click",()=>{if(mystery.clueIndex<2){mystery.clueIndex++;showClue()}});
   $("retryMysteryButton")?.addEventListener("click",resetMystery);
 
   decorateHome();
