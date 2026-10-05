@@ -8,6 +8,8 @@
   const QUEUE_KEY = "caffiend:souffle-sync:v2";
   const MAX_QUEUE = 24;
 
+  function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
+
   function readQueue() {
     try {
       const value = JSON.parse(localStorage.getItem(QUEUE_KEY) || "[]");
@@ -23,7 +25,8 @@
 
   function enqueue(kind, payload) {
     const queue = readQueue();
-    queue.push({ kind, payload, queuedAt:new Date().toISOString() });
+    const duplicate = queue.some(item => item.kind === kind && item.payload?.sessionId === payload?.sessionId);
+    if (!duplicate) queue.push({ kind, payload, queuedAt:new Date().toISOString() });
     writeQueue(queue);
   }
 
@@ -76,7 +79,17 @@
       const data = await request("/feedback", payload);
       return { ok:true, queued:false, data };
     } catch (error) {
+      // Result submission and survey submission can happen nearly together.
+      // Give the run row a short chance to land before falling back to the offline queue.
+      if (String(error?.message || "") === "RUN_NOT_FOUND") {
+        await sleep(850);
+        try {
+          const data = await request("/feedback", payload);
+          return { ok:true, queued:false, data, retried:true };
+        } catch (_) {}
+      }
       enqueue("feedback", payload);
+      setTimeout(() => flushQueue().catch(() => {}), 1400);
       return { ok:false, queued:true, error:String(error?.message || error) };
     }
   }
@@ -86,9 +99,11 @@
     const queue = readQueue();
     if (!queue.length) return { sent:0, remaining:0 };
 
+    // Runs must be synced before their linked feedback rows.
+    const ordered = [...queue].sort((a,b) => Number(a.kind === "feedback") - Number(b.kind === "feedback"));
     const remaining = [];
     let sent = 0;
-    for (const item of queue) {
+    for (const item of ordered) {
       try {
         await request(item.kind === "feedback" ? "/feedback" : "/run", item.payload);
         sent++;
