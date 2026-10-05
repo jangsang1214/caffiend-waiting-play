@@ -1,5 +1,5 @@
 window.DIGUL_CONFIG = {
-  version: "1.8.0",
+  version: "2.0.0",
   gameName: "디굴디굴",
   subtitle: "디저트가 데굴데굴",
   timezone: "Asia/Seoul",
@@ -13,6 +13,7 @@ window.DIGUL_CONFIG = {
   store: {
     id: "caffiend-yangdeok",
     leaderboardApi: "https://pygyhbtipxhpuypjofqe.supabase.co/functions/v1/digul-api",
+    souffleApi: "https://pygyhbtipxhpuypjofqe.supabase.co/functions/v1/souffle-api",
     requestTimeoutMs: 3500
   },
   nickname: {
@@ -43,8 +44,28 @@ window.DIGUL_CONFIG = {
   souffle: {
     targetSeconds: 270,
     steps: 12,
-    season: "autumn",
-    interactions: ["tap","drag","swipe","continuous-drag"]
+    season: "auto",
+    interactions: ["tap","drag","swipe","continuous-drag"],
+    remoteSync: true,
+    feedback: {
+      enabled: true,
+      questions: ["fun","wait","anticipation"],
+      scaleMin: 1,
+      scaleMax: 5
+    },
+    scoring: {
+      fixed: { "1":100, "2":100, "3":100, "4":100, "5":90, "6":130, "7":100, "10":110, "11":120 },
+      fold8: { perfect:120, good:75 },
+      fold9: { perfect:140, good:80 },
+      finalBase: 120,
+      overtimePenaltyPerSecond: 2
+    },
+    seasons: {
+      spring: { label:"SPRING", months:[3,4,5], className:"spring", message:"천천히 피어나는 봄" },
+      summer: { label:"SUMMER", months:[6,7,8], className:"summer", message:"가볍고 산뜻한 여름" },
+      autumn: { label:"AUTUMN", months:[9,10,11], className:"autumn", message:"포근하게 익어가는 가을" },
+      winter: { label:"WINTER", months:[12,1,2], className:"winter", message:"따뜻하게 기다리는 겨울" }
+    }
   },
   assets: {
     base: "assets/menu/",
