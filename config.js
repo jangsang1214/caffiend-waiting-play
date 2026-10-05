@@ -1,5 +1,5 @@
 window.DIGUL_CONFIG = {
-  version: "1.7.1",
+  version: "1.8.0",
   gameName: "디굴디굴",
   subtitle: "디저트가 데굴데굴",
   timezone: "Asia/Seoul",
@@ -39,6 +39,12 @@ window.DIGUL_CONFIG = {
     droppableLevels: 5,
     completionBonus: 150,
     maxEventBuffer: 80
+  },
+  souffle: {
+    targetSeconds: 270,
+    steps: 12,
+    season: "autumn",
+    interactions: ["tap","drag","swipe","continuous-drag"]
   },
   assets: {
     base: "assets/menu/",
