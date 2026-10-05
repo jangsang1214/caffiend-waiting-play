@@ -1,8 +1,13 @@
 (() => {
-  const souffleCss=document.createElement("link");
-  souffleCss.rel="stylesheet";
-  souffleCss.href="./souffle.css?v=1.8.0";
-  document.head.appendChild(souffleCss);
+  function loadStyle(href) {
+    if (document.querySelector(`link[href="${href}"]`)) return;
+    const link=document.createElement("link");
+    link.rel="stylesheet";
+    link.href=href;
+    document.head.appendChild(link);
+  }
+  loadStyle("./souffle.css?v=2.0.0");
+  loadStyle("./souffle-v2.css?v=2.0.0");
 
   const $ = id => document.getElementById(id);
   const EXP = window.DigulExperience;
