@@ -1,20 +1,30 @@
 (() => {
   const $ = id => document.getElementById(id);
   const CONFIG = window.DIGUL_CONFIG;
+  const EXP = window.DigulExperience;
   const SCREENS = window.CaffiendScreens;
   const ART = window.DigulDessertArt;
   const ANALYTICS = window.DigulAnalytics;
-  if (!CONFIG || !SCREENS || !ART) return;
+  const SERVICE = window.CaffiendSouffleService;
+  if (!CONFIG || !EXP || !SCREENS || !ART) return;
 
-  const MENUS = [
-    {id:"lotus",name:"로투스 수플레",level:0},
-    {id:"chestnut",name:"밤 수플레",level:2},
-    {id:"sesame",name:"흑임자 수플레",level:3},
-    {id:"peach",name:"복숭아 수플레",level:4},
-    {id:"dubai",name:"두바이 초코 수플레",level:6},
-    {id:"injeolmi",name:"인절미 수플레",level:8},
-    {id:"brulee",name:"크림브륄레 수플레",level:10}
-  ];
+  const MENU_IDS = {
+    "로투스 수플레":"lotus",
+    "밤 수플레":"chestnut",
+    "흑임자 수플레":"sesame",
+    "복숭아 수플레":"peach",
+    "두바이 초코 수플레":"dubai",
+    "인절미 수플레":"injeolmi",
+    "크림브륄레 수플레":"brulee"
+  };
+
+  const MENUS = CONFIG.menus
+    .filter(menu => String(menu.name || "").includes("수플레"))
+    .map(menu => ({
+      id:MENU_IDS[menu.name] || `menu-${menu.level}`,
+      name:menu.name,
+      level:Math.max(0, Number(menu.level || 1) - 1)
+    }));
 
   const STEP_COPY = [
     ["달걀 분리","톡! 깨고 노른자를 옮겨요"],
@@ -28,11 +38,12 @@
     ["마지막 폴딩","바닥에서 위로 천천히"],
     ["팬 준비","기름 → 반죽"],
     ["첫 번째 굽기","물 → 뚜껑 → 20초"],
-    ["뒤집고 완성","뒤집기 → 물 → 마지막 굽기"]
+    ["뒤집고 완성","뒤집기 → 물 → 12초 → 타이밍"]
   ];
 
   const state = {
     selected:null,
+    season:"autumn",
     step:1,
     score:0,
     startedAt:0,
@@ -44,8 +55,37 @@
     stepResults:[],
     cleanup:[],
     finalTimingScore:0,
-    transitioning:false
+    transitioning:false,
+    transitionTimer:null,
+    runId:"",
+    runActive:false,
+    runFinished:false,
+    feedback:{ fun:0, wait:0, anticipation:0 }
   };
+
+  function seasonForNow() {
+    const configured = CONFIG.souffle?.season;
+    if (configured && configured !== "auto" && CONFIG.souffle?.seasons?.[configured]) return configured;
+    const month = Number(new Intl.DateTimeFormat("en-US", {
+      timeZone:CONFIG.timezone || "Asia/Seoul",
+      month:"numeric"
+    }).format(new Date()));
+    const entries = Object.entries(CONFIG.souffle?.seasons || {});
+    return entries.find(([,value]) => Array.isArray(value.months) && value.months.includes(month))?.[0] || "autumn";
+  }
+
+  function applySeason() {
+    state.season = seasonForNow();
+    const meta = CONFIG.souffle?.seasons?.[state.season] || { label:"AUTUMN", className:"autumn", message:"포근하게 익어가는 가을" };
+    const screen = $("souffleScreen");
+    if (screen) screen.dataset.season = state.season;
+    document.querySelectorAll("#souffleScreen .season-window").forEach(el => {
+      el.classList.remove("spring","summer","autumn","winter");
+      el.classList.add(meta.className || state.season);
+    });
+    if ($("souffleSeasonLabel")) $("souffleSeasonLabel").textContent = `${meta.label} · CAFFIEND`;
+    if ($("souffleSeasonMessage")) $("souffleSeasonMessage").textContent = meta.message || "";
+  }
 
   function on(el,type,fn,opts){
     if(!el) return;
@@ -57,6 +97,12 @@
     state.cleanup.splice(0).forEach(fn=>{try{fn()}catch(_){}});
   }
 
+  function clearTransition(){
+    if(state.transitionTimer) clearTimeout(state.transitionTimer);
+    state.transitionTimer=null;
+    state.transitioning=false;
+  }
+
   function stopTimer(){
     clearInterval(state.timer);
     state.timer=null;
@@ -64,10 +110,14 @@
   }
 
   function leaveGame(){
+    if(state.runActive && !state.runFinished){
+      ANALYTICS?.track?.("souffle_game_abort",{step:state.step,elapsed:Math.round(state.elapsed),menu:state.selected?.id||""});
+    }
+    state.runActive=false;
     cleanupStep();
+    clearTransition();
     stopTimer();
     state.startedAt=0;
-    state.transitioning=false;
   }
 
   function formatTime(sec){
@@ -107,7 +157,7 @@
       gain.gain.setValueAtTime(.035,ac.currentTime);
       gain.gain.exponentialRampToValueAtTime(.001,ac.currentTime+.12);
       osc.connect(gain);gain.connect(ac.destination);osc.start();osc.stop(ac.currentTime+.13);
-    }catch(_){ }
+    }catch(_){}
   }
 
   function mountArt(target,level,size){
@@ -135,6 +185,14 @@
     });
   }
 
+  function setSyncState(kind,text){
+    const el=$("souffleSyncState");
+    if(!el) return;
+    el.className=`souffle-sync-state ${kind?`is-${kind}`:""}`.trim();
+    const label=el.querySelector("span");
+    if(label) label.textContent=text;
+  }
+
   function renderMenuSelect(){
     const grid=$("souffleMenuGrid");
     if(!grid) return;
@@ -143,23 +201,43 @@
       const btn=document.createElement("button");
       btn.type="button";
       btn.className="souffle-menu-card";
-      btn.innerHTML=`<span class="menu-art"></span><strong>${menu.name.replace(" 수플레","")}</strong>`;
+      btn.setAttribute("aria-pressed","false");
+      btn.innerHTML=`<span class="menu-art"></span><strong>${menu.name.replace(" 수플레","")}</strong><small class="menu-meta">SOUFFLÉ</small>`;
       mountArt(btn.querySelector(".menu-art"),menu.level,96);
       btn.addEventListener("click",()=>{
         state.selected=menu;
-        grid.querySelectorAll(".souffle-menu-card").forEach(x=>x.classList.toggle("selected",x===btn));
-        $("souffleSelectedName").textContent=menu.name;
-        $("souffleContinueButton").disabled=false;
+        grid.querySelectorAll(".souffle-menu-card").forEach(x=>{
+          const selected=x===btn;
+          x.classList.toggle("selected",selected);
+          x.setAttribute("aria-pressed",selected?"true":"false");
+        });
+        if($("souffleSelectedName")) $("souffleSelectedName").textContent=menu.name;
+        if($("souffleContinueButton")) $("souffleContinueButton").disabled=false;
+        ANALYTICS?.track?.("souffle_menu_select",{menu:menu.id});
         beep();
       });
       grid.appendChild(btn);
     });
   }
 
+  function resetFeedback(){
+    state.feedback={fun:0,wait:0,anticipation:0};
+    document.querySelectorAll("[data-feedback-question]").forEach(btn=>{
+      btn.disabled=false;
+      btn.classList.remove("selected");
+      btn.setAttribute("aria-pressed","false");
+    });
+    const submit=$("souffleFeedbackSubmit");
+    if(submit){submit.disabled=true;submit.textContent="평가 보내기";}
+    const status=$("souffleFeedbackStatus");
+    if(status){status.textContent="";status.className="souffle-feedback-status";}
+  }
+
   function openGame(){
     if(!SCREENS.ensureNickname()) return;
     leaveGame();
     SCREENS.showOnly("souffle");
+    applySeason();
     state.selected=null;
     state.step=1;
     state.score=0;
@@ -167,17 +245,26 @@
     state.overtime=0;
     state.stepResults=[];
     state.finalTimingScore=0;
-    $("souffleContinueButton").disabled=true;
-    $("souffleSelectedName").textContent="메뉴를 골라주세요";
-    $("souffleTimer").textContent=formatTime(state.targetSeconds);
-    $("souffleTimer").classList.remove("overtime");
+    state.runFinished=false;
+    if($("souffleContinueButton")) $("souffleContinueButton").disabled=true;
+    if($("souffleSelectedName")) $("souffleSelectedName").textContent="메뉴를 골라주세요";
+    if($("souffleTimer")) {
+      $("souffleTimer").textContent=formatTime(state.targetSeconds);
+      $("souffleTimer").classList.remove("overtime");
+    }
+    setSyncState("",SERVICE?.queuedCount?.()?`이전 기록 ${SERVICE.queuedCount()}건 동기화 대기`:"플레이 기록은 완료 후 저장돼요");
     setPanel("select");
     renderMenuSelect();
-    ANALYTICS?.track?.("souffle_open_v2");
+    resetFeedback();
+    SERVICE?.flushQueue?.().then(result=>{
+      if(result?.sent) setSyncState("synced",`이전 기록 ${result.sent}건 동기화 완료`);
+    }).catch(()=>{});
+    ANALYTICS?.track?.("souffle_open_v3",{season:state.season});
   }
 
   function resetRun(){
     cleanupStep();
+    clearTransition();
     stopTimer();
     state.step=1;
     state.score=0;
@@ -185,31 +272,43 @@
     state.overtime=0;
     state.stepResults=[];
     state.finalTimingScore=0;
-    state.transitioning=false;
-    $("souffleScoreLive").textContent="0";
+    state.runId=EXP.newGameId();
+    state.runActive=true;
+    state.runFinished=false;
+    resetFeedback();
+    if($("souffleScoreLive")) $("souffleScoreLive").textContent="0";
     setPanel("play");
     startTimer();
     renderStep();
-    ANALYTICS?.track?.("souffle_game_start",{menu:state.selected?.id||""});
+    ANALYTICS?.track?.("souffle_game_start",{menu:state.selected?.id||"",season:state.season,runId:state.runId});
   }
 
   function renderProgress(){
-    $("souffleStepBadge").textContent=`${state.step} / 12`;
-    $("souffleProgressFill").style.width=`${state.step/12*100}%`;
-    $("souffleStepTitle").textContent=STEP_COPY[state.step-1][0];
-    $("souffleStepHint").textContent=STEP_COPY[state.step-1][1];
+    if($("souffleStepBadge")) $("souffleStepBadge").textContent=`${state.step} / ${CONFIG.souffle?.steps||12}`;
+    const percent=state.step/(CONFIG.souffle?.steps||12)*100;
+    if($("souffleProgressFill")) $("souffleProgressFill").style.width=`${percent}%`;
+    const progress=$("souffleProgressTrack");
+    if(progress){
+      progress.setAttribute("aria-valuenow",String(state.step));
+      progress.setAttribute("aria-valuetext",`${state.step}단계: ${STEP_COPY[state.step-1]?.[0]||""}`);
+    }
+    if($("souffleStepTitle")) $("souffleStepTitle").textContent=STEP_COPY[state.step-1][0];
+    if($("souffleStepHint")) $("souffleStepHint").textContent=STEP_COPY[state.step-1][1];
   }
 
   function completeStep(points=100,quality="GOOD",delay=420){
     if(state.transitioning) return;
     state.transitioning=true;
     const completed=state.step;
-    state.score+=Math.max(0,Math.round(points));
-    $("souffleScoreLive").textContent=state.score.toLocaleString("ko-KR");
-    state.stepResults.push({step:completed,quality,points:Math.round(points)});
+    const awarded=Math.max(0,Math.round(points));
+    state.score+=awarded;
+    if($("souffleScoreLive")) $("souffleScoreLive").textContent=state.score.toLocaleString("ko-KR");
+    state.stepResults.push({step:completed,quality,points:awarded});
+    ANALYTICS?.track?.("souffle_step_complete",{step:completed,quality,points:awarded});
     flash(quality==="PERFECT"?"완벽해요!":quality==="OK"?"완성!":"좋아요!");
     cleanupStep();
-    setTimeout(()=>{
+    state.transitionTimer=setTimeout(()=>{
+      state.transitionTimer=null;
       state.transitioning=false;
       if(completed>=12) finishRun();
       else {state.step=completed+1;renderStep();}
@@ -218,21 +317,30 @@
 
   function stage(html){
     const el=$("souffleWorkArea");
+    if(!el) return document.createElement("div");
     el.innerHTML=html;
     return el;
   }
 
+  function resetDragged(el){
+    el.style.position="";
+    el.style.left="";
+    el.style.top="";
+  }
+
   function makeDrag(el,target,onDrop){
-    let active=false,ox=0,oy=0;
+    if(!el||!target)return;
+    let active=false,ox=0,oy=0,lastPoint=null;
     const down=e=>{
       if(el.disabled) return;
-      active=true;
+      active=true;lastPoint={x:e.clientX,y:e.clientY};
       el.setPointerCapture?.(e.pointerId);
       const r=el.getBoundingClientRect();ox=e.clientX-r.left;oy=e.clientY-r.top;
       el.classList.add("dragging");e.preventDefault();
     };
     const move=e=>{
       if(!active)return;
+      lastPoint={x:e.clientX,y:e.clientY};
       const host=el.offsetParent?.getBoundingClientRect?.();
       if(!host) return;
       el.style.position="absolute";
@@ -240,19 +348,21 @@
       el.style.top=`${e.clientY-host.top-oy}px`;
       e.preventDefault();
     };
-    const up=e=>{
+    const finish=(e,cancelled=false)=>{
       if(!active)return;
       active=false;el.classList.remove("dragging");
-      const a=el.getBoundingClientRect(),b=target.getBoundingClientRect();
-      const cx=a.left+a.width/2,cy=a.top+a.height/2;
-      const hit=cx>b.left&&cx<b.right&&cy>b.top&&cy<b.bottom;
+      const p=lastPoint || {x:e.clientX||0,y:e.clientY||0};
+      const b=target.getBoundingClientRect();
+      const hit=!cancelled&&p.x>b.left&&p.x<b.right&&p.y>b.top&&p.y<b.bottom;
       if(hit){onDrop();return;}
-      el.style.position="";el.style.left="";el.style.top="";
+      resetDragged(el);
     };
-    on(el,"pointerdown",down);on(el,"pointermove",move);on(el,"pointerup",up);on(el,"pointercancel",up);
+    on(el,"pointerdown",down);on(el,"pointermove",move);
+    on(el,"pointerup",e=>finish(e,false));on(el,"pointercancel",e=>finish(e,true));
   }
 
   function continuousGesture(el,{need=500,maxSpeed=9999,onProgress,onDone}){
+    if(!el)return;
     let down=false,last=null,total=0,fast=0,done=false;
     const pd=e=>{if(done)return;down=true;last={x:e.clientX,y:e.clientY,t:performance.now()};el.setPointerCapture?.(e.pointerId);e.preventDefault()};
     const pm=e=>{
@@ -268,6 +378,7 @@
   }
 
   function horizontalSwipes(el,need,onProgress,onDone){
+    if(!el)return;
     let down=false,lastX=0,dir=0,count=0,done=false;
     const pd=e=>{if(done)return;down=true;lastX=e.clientX;el.setPointerCapture?.(e.pointerId);e.preventDefault()};
     const pm=e=>{
@@ -281,6 +392,7 @@
 
   function renderStep(){
     cleanupStep();
+    applySeason();
     renderProgress();
     switch(state.step){
       case 1:return stepEgg();case 2:return stepIngredients();case 3:return stepSift();case 4:return stepMix();
@@ -290,7 +402,7 @@
   }
 
   function stepEgg(){
-    const root=stage(`<div class="kitchen-scene egg-scene"><div class="season-window autumn"><i></i></div><button class="egg-object" type="button" aria-label="달걀 깨기"><span></span></button><div class="mini-bowls"><div class="cook-bowl white-bowl"><small>흰자</small></div><div id="yolkBowl" class="cook-bowl yolk-bowl"><small>노른자</small></div></div><div id="yolkPiece" class="yolk-piece" hidden></div><div class="gesture-cue tap-cue">TAP</div></div>`);
+    const root=stage(`<div class="kitchen-scene egg-scene"><div class="season-window ${state.season}"><i></i><b></b></div><button class="egg-object" type="button" aria-label="달걀 깨기"><span></span></button><div class="mini-bowls"><div class="cook-bowl white-bowl"><small>흰자</small></div><div id="yolkBowl" class="cook-bowl yolk-bowl"><small>노른자</small></div></div><div id="yolkPiece" class="yolk-piece" hidden></div><div class="gesture-cue tap-cue">TAP</div></div>`);
     const egg=root.querySelector(".egg-object"),yolk=root.querySelector("#yolkPiece"),target=root.querySelector("#yolkBowl");
     on(egg,"click",()=>{
       if(egg.disabled)return;
@@ -305,7 +417,7 @@
     let expected=0;const bowl=root.querySelector("#ingredientBowl");
     root.querySelectorAll(".ingredient-token").forEach(token=>makeDrag(token,bowl,()=>{
       const i=Number(token.dataset.i);
-      if(i!==expected){flash("순서대로!",false);token.style.position="";token.style.left="";token.style.top="";return;}
+      if(i!==expected){flash("순서대로!",false);resetDragged(token);return;}
       token.classList.add("used");token.disabled=true;expected++;beep();
       if(expected===items.length)completeStep(100,"PERFECT");
     }));
@@ -353,6 +465,7 @@
     const el=root.querySelector("#liftWhisk");let sy=null;
     on(el,"pointerdown",e=>{sy=e.clientY;el.setPointerCapture?.(e.pointerId);e.preventDefault()});
     on(el,"pointerup",e=>{if(sy===null)return;const dy=sy-e.clientY;sy=null;if(dy>70){el.classList.add("lifted");root.querySelector(".peak-foam").classList.add("show-peak");completeStep(100,"PERFECT",700)}else flash("위로 길게!",false)});
+    on(el,"pointercancel",()=>{sy=null});
   }
 
   function stepFirstFold(){
@@ -384,14 +497,17 @@
     on(lid,"click",()=>{
       if(lid.disabled)return;
       lid.disabled=true;lid.classList.add("closed");$("bakeCue").textContent="WAIT";count.classList.add("show");
-      let left=20;const t=setInterval(()=>{left--;count.textContent=String(left);pan.style.setProperty("--rise",String((20-left)/20));if(left<=0){clearInterval(t);completeStep(120,"PERFECT")}},1000);
-      state.cleanup.push(()=>clearInterval(t));
+      let left=20;const timer=setInterval(()=>{
+        left--;count.textContent=String(left);pan.style.setProperty("--rise",String((20-left)/20));
+        if(left<=0){clearInterval(timer);completeStep(120,"PERFECT")}
+      },1000);
+      state.cleanup.push(()=>clearInterval(timer));
     });
   }
 
   function stepFinishBake(){
-    const root=stage(`<div class="kitchen-scene pan-scene finish"><div id="finishPan" class="cook-pan with-batter baked"><span class="pan-ring"></span><i class="souffle-disc"></i></div><div id="flipCue" class="gesture-cue up-cue">↑ FLIP</div><button id="finishWater" class="water-spoon" type="button" disabled>물 1T</button><button id="finishLid" class="pan-lid" type="button" disabled>뚜껑</button><div id="finishTiming" class="finish-timing" hidden><span class="good-zone"></span><i></i></div><button id="finishTap" class="timing-tap" type="button" hidden>지금!</button></div>`);
-    const pan=root.querySelector("#finishPan"),water=root.querySelector("#finishWater"),lid=root.querySelector("#finishLid"),track=root.querySelector("#finishTiming"),needle=track.querySelector("i"),tap=root.querySelector("#finishTap");
+    const root=stage(`<div class="kitchen-scene pan-scene finish"><div id="finishPan" class="cook-pan with-batter baked"><span class="pan-ring"></span><i class="souffle-disc"></i></div><div id="flipCue" class="gesture-cue up-cue">↑ FLIP</div><button id="finishWater" class="water-spoon" type="button" disabled>물 1T</button><button id="finishLid" class="pan-lid" type="button" disabled>뚜껑</button><div id="finishCount" class="bake-count">12</div><div id="finishTiming" class="finish-timing" hidden><span class="good-zone"></span><i></i></div><button id="finishTap" class="timing-tap" type="button" hidden>지금!</button></div>`);
+    const pan=root.querySelector("#finishPan"),water=root.querySelector("#finishWater"),lid=root.querySelector("#finishLid"),count=root.querySelector("#finishCount"),track=root.querySelector("#finishTiming"),needle=track.querySelector("i"),tap=root.querySelector("#finishTap");
     let sy=null,flipped=false;
     on(pan,"pointerdown",e=>{if(flipped)return;sy=e.clientY;pan.setPointerCapture?.(e.pointerId);e.preventDefault()});
     on(pan,"pointerup",e=>{
@@ -401,35 +517,118 @@
       flipped=true;pan.classList.add("flipped");water.disabled=false;$("flipCue").textContent="DRAG WATER";flash("뒤집기 성공!");
       makeDrag(water,pan,()=>{water.disabled=true;water.classList.add("used");lid.disabled=false;$("flipCue").textContent="TAP LID"});
     });
+    on(pan,"pointercancel",()=>{sy=null});
     on(lid,"click",()=>{
       if(lid.disabled)return;
-      lid.disabled=true;lid.classList.add("closed");track.hidden=false;tap.hidden=false;$("flipCue").textContent="GREEN = TAP";
+      lid.disabled=true;lid.classList.add("closed");count.classList.add("show");$("flipCue").textContent="12 SEC";
+      let left=12;
+      const bakeTimer=setInterval(()=>{
+        left--;count.textContent=String(left);pan.style.setProperty("--rise",String(Math.min(1,.65+(12-left)/34)));
+        if(left<=0){
+          clearInterval(bakeTimer);count.classList.remove("show");track.hidden=false;tap.hidden=false;$("flipCue").textContent="GREEN = TAP";
+          startTiming();
+        }
+      },1000);
+      state.cleanup.push(()=>clearInterval(bakeTimer));
+    });
+
+    function startTiming(){
       const started=performance.now();let pos=0,raf=0;
       const loop=now=>{const phase=((now-started)%2200)/2200;pos=phase<.5?phase*200:(1-phase)*200;needle.style.left=`${pos}%`;raf=requestAnimationFrame(loop)};
       raf=requestAnimationFrame(loop);state.cleanup.push(()=>cancelAnimationFrame(raf));
-      on(tap,"click",()=>{cancelAnimationFrame(raf);tap.disabled=true;state.finalTimingScore=Math.max(0,Math.round(100-Math.abs(pos-50)*2));const q=state.finalTimingScore>=82?"PERFECT":state.finalTimingScore>=55?"GOOD":"OK";completeStep(120+state.finalTimingScore,q,600)});
-    });
+      on(tap,"click",()=>{
+        cancelAnimationFrame(raf);tap.disabled=true;
+        state.finalTimingScore=Math.max(0,Math.round(100-Math.abs(pos-50)*2));
+        const q=state.finalTimingScore>=82?"PERFECT":state.finalTimingScore>=55?"GOOD":"OK";
+        completeStep(120+state.finalTimingScore,q,600);
+      });
+    }
+  }
+
+  function renderResultSummary(finalScore){
+    const perfect=state.stepResults.filter(x=>x.quality==="PERFECT").length;
+    const careful=state.stepResults.filter(x=>[8,9].includes(x.step)&&x.quality==="PERFECT").length;
+    if($("soufflePerfectCount")) $("soufflePerfectCount").textContent=String(perfect);
+    if($("souffleCareCount")) $("souffleCareCount").textContent=`${careful}/2`;
+    if($("souffleTimingValue")) $("souffleTimingValue").textContent=String(state.finalTimingScore);
+    return {perfect,careful,finalScore};
   }
 
   function finishRun(){
-    stopTimer();cleanupStep();setPanel("result");
-    const overtimePenalty=Math.round(state.overtime*2),finalScore=Math.max(0,state.score-overtimePenalty);
-    $("souffleResultMenu").textContent=state.selected?.name||"수플레";
-    $("souffleFinalScore").textContent=finalScore.toLocaleString("ko-KR");
-    $("souffleResultTime").textContent=formatTime(state.elapsed);
-    $("souffleResultRemain").textContent=state.overtime>0?`+${formatTime(state.overtime)}`:formatTime(state.targetSeconds-state.elapsed);
-    $("souffleResultGrade").textContent=finalScore>=1250?"MASTER":finalScore>=1050?"FLUFFY":"NICE";
-    $("souffleResultList").innerHTML=state.stepResults.map(r=>`<span class="${r.quality.toLowerCase()}"><b>${String(r.step).padStart(2,"0")}</b>${r.quality}</span>`).join("");
+    stopTimer();cleanupStep();clearTransition();
+    state.runActive=false;state.runFinished=true;
+    setPanel("result");
+    const overtimePenalty=Math.round(state.overtime*2);
+    const finalScore=Math.max(0,state.score-overtimePenalty);
+    if($("souffleResultMenu")) $("souffleResultMenu").textContent=state.selected?.name||"수플레";
+    if($("souffleFinalScore")) $("souffleFinalScore").textContent=finalScore.toLocaleString("ko-KR");
+    if($("souffleResultTime")) $("souffleResultTime").textContent=formatTime(state.elapsed);
+    if($("souffleResultRemain")) $("souffleResultRemain").textContent=state.overtime>0?`+${formatTime(state.overtime)}`:formatTime(state.targetSeconds-state.elapsed);
+    if($("souffleResultGrade")) $("souffleResultGrade").textContent=finalScore>=1250?"MASTER":finalScore>=1050?"FLUFFY":"NICE";
+    if($("souffleResultList")) $("souffleResultList").innerHTML=state.stepResults.map(r=>`<span class="${r.quality.toLowerCase()}"><b>${String(r.step).padStart(2,"0")}</b>${r.quality}</span>`).join("");
     mountArt($("souffleResultArt"),state.selected?.level||0,230);
+    renderResultSummary(finalScore);
+    resetFeedback();
     beep("finish");
-    ANALYTICS?.track?.("souffle_game_finish",{menu:state.selected?.id||"",score:finalScore,elapsed:Math.round(state.elapsed),overtime:Math.round(state.overtime),timing:state.finalTimingScore});
+    ANALYTICS?.track?.("souffle_game_finish",{menu:state.selected?.id||"",score:finalScore,elapsed:Math.round(state.elapsed),overtime:Math.round(state.overtime),timing:state.finalTimingScore,season:state.season});
+
+    const runPayload={
+      sessionId:state.runId,
+      menuId:state.selected?.id||"",
+      season:state.season,
+      elapsedMs:Math.round(state.elapsed*1000),
+      stepResults:state.stepResults,
+      timingScore:state.finalTimingScore
+    };
+    setSyncState("","플레이 기록 저장 중");
+    if(SERVICE?.submitRun){
+      SERVICE.submitRun(runPayload).then(result=>{
+        setSyncState(result.ok?"synced":"queued",result.ok?"플레이 기록 저장 완료":"네트워크 연결 시 자동 저장");
+        ANALYTICS?.track?.("souffle_remote_sync",{ok:result.ok,queued:result.queued});
+      }).catch(()=>setSyncState("queued","네트워크 연결 시 자동 저장"));
+    } else {
+      setSyncState("queued","이 기기에서만 기록됨");
+    }
+  }
+
+  function selectFeedback(question,value,button){
+    state.feedback[question]=value;
+    document.querySelectorAll(`[data-feedback-question="${question}"]`).forEach(btn=>{
+      const selected=btn===button;
+      btn.classList.toggle("selected",selected);
+      btn.setAttribute("aria-pressed",selected?"true":"false");
+    });
+    const ready=Object.values(state.feedback).every(v=>Number(v)>=1);
+    if($("souffleFeedbackSubmit")) $("souffleFeedbackSubmit").disabled=!ready;
+  }
+
+  async function submitFeedback(){
+    if(!Object.values(state.feedback).every(v=>Number(v)>=1)) return;
+    const button=$("souffleFeedbackSubmit");
+    const status=$("souffleFeedbackStatus");
+    if(button){button.disabled=true;button.textContent="보내는 중";}
+    document.querySelectorAll("[data-feedback-question]").forEach(btn=>btn.disabled=true);
+    const payload={sessionId:state.runId,...state.feedback};
+    const result=SERVICE?.submitFeedback?await SERVICE.submitFeedback(payload):{ok:false,queued:true};
+    if(button) button.textContent="평가 완료";
+    if(status){
+      status.textContent=result.ok?"고마워요. 다음 현장 테스트에 반영할게요.":"고마워요. 연결되면 자동으로 저장돼요.";
+      status.className="souffle-feedback-status good";
+    }
+    ANALYTICS?.track?.("souffle_feedback_submit",{...state.feedback,ok:result.ok,queued:result.queued});
   }
 
   $("openSouffleButton")?.addEventListener("click",openGame);
-  $("souffleContinueButton")?.addEventListener("click",()=>{if(state.selected)setPanel("tutorial")});
+  $("souffleContinueButton")?.addEventListener("click",()=>{if(state.selected){setPanel("tutorial");ANALYTICS?.track?.("souffle_tutorial_open",{menu:state.selected.id})}});
   $("souffleTutorialStart")?.addEventListener("click",resetRun);
   $("souffleRetryButton")?.addEventListener("click",resetRun);
   $("souffleReselectButton")?.addEventListener("click",()=>{leaveGame();setPanel("select");renderMenuSelect()});
   $("souffleSoundButton")?.addEventListener("click",()=>{state.sound=!state.sound;$("souffleSoundButton").textContent=state.sound?"♪":"×";$("souffleSoundButton").setAttribute("aria-label",state.sound?"사운드 끄기":"사운드 켜기")});
+  $("souffleFeedbackSubmit")?.addEventListener("click",()=>submitFeedback().catch(()=>{}));
+  document.querySelectorAll("[data-feedback-question]").forEach(btn=>{
+    btn.addEventListener("click",()=>selectFeedback(btn.dataset.feedbackQuestion,Number(btn.dataset.feedbackValue),btn));
+  });
   document.querySelectorAll('[data-home-from="souffle"]').forEach(btn=>btn.addEventListener("click",leaveGame,{capture:true}));
+
+  applySeason();
 })();
