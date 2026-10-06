@@ -34,6 +34,8 @@ jobs:
           test -f souffle.css
           test -f souffle-v2.css
           test -f README.md
+          test -f FIELD_TEST.md
+          test -f SUPABASE_ACTIVATION.md
           test -f dessert-art.js
           test -f sprite-renderer.js
           test -f side-games.js
