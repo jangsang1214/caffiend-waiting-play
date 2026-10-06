@@ -25,6 +25,8 @@ jobs:
           node --check side-games.js
           node --check souffle-service.js
           node --check souffle-game.js
+          node --check scripts/smoke-check.mjs
+          node --check scripts/souffle-contract-check.mjs
       - name: Check required files
         run: |
           test -f index.html
@@ -37,6 +39,8 @@ jobs:
           test -f side-games.js
           test -f souffle-service.js
           test -f souffle-game.js
+          test -f scripts/smoke-check.mjs
+          test -f scripts/souffle-contract-check.mjs
           test -f assets/menu/README.md
           test -f supabase/migrations/002_digul.sql
           test -f supabase/migrations/004_souffle_mvp.sql
@@ -52,3 +56,5 @@ jobs:
           grep -q 'souffleApi:' config.js
       - name: Run static smoke checks
         run: node scripts/smoke-check.mjs
+      - name: Run souffle scoring and backend contract checks
+        run: node scripts/souffle-contract-check.mjs
