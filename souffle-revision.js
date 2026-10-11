@@ -1,6 +1,20 @@
 (() => {
   const $ = id => document.getElementById(id);
   const INTERNAL_TO_VISIBLE = {1:1,2:2,3:3,4:4,5:5,6:6,7:null,8:7,9:8,10:9,11:10,12:11};
+  const INTERNAL_BY_TITLE = {
+    "달걀 분리":1,
+    "노른자 반죽":2,
+    "박력분 체치기":3,
+    "반죽 섞기":4,
+    "흰자 풀기":5,
+    "머랭 만들기":6,
+    "뿔 확인":7,
+    "1차 머랭 섞기":8,
+    "마지막 폴딩":9,
+    "팬 준비":10,
+    "첫 번째 굽기":11,
+    "뒤집고 완성":12
+  };
   const FALLBACK_GUIDES = {
     1:"달걀을 톡 깨뜨린 뒤 노른자를 노른자 볼로 옮겨주세요.",
     2:"설탕 → 우유 → 바닐라 → 소금 순서로 재료를 볼에 드래그해주세요.",
@@ -19,7 +33,13 @@
   let lastInternalStep = 0;
   let rootObserver = null;
 
+  function setText(el,value) {
+    if (el && el.textContent !== value) el.textContent = value;
+  }
+
   function internalStep() {
+    const title = $("souffleStepTitle")?.textContent?.trim() || "";
+    if (INTERNAL_BY_TITLE[title]) return INTERNAL_BY_TITLE[title];
     const badge = $("souffleStepBadge")?.textContent || "";
     const parsed = Number((badge.match(/\d+/) || [0])[0]);
     return Number.isFinite(parsed) ? parsed : 0;
@@ -46,22 +66,23 @@
     const visible = INTERNAL_TO_VISIBLE[step];
     if (!visible) return;
     const badge = $("souffleStepBadge");
-    if (badge) badge.textContent = `${visible} / 11`;
+    setText(badge,`${visible} / 11`);
     const progress = $("souffleProgressTrack");
     if (progress) {
-      progress.setAttribute("aria-valuemax","11");
-      progress.setAttribute("aria-valuenow",String(visible));
+      if (progress.getAttribute("aria-valuemax") !== "11") progress.setAttribute("aria-valuemax","11");
+      if (progress.getAttribute("aria-valuenow") !== String(visible)) progress.setAttribute("aria-valuenow",String(visible));
       const title = $("souffleStepTitle")?.textContent || "";
-      progress.setAttribute("aria-valuetext",`${visible}단계: ${title}`);
+      const aria = `${visible}단계: ${title}`;
+      if (progress.getAttribute("aria-valuetext") !== aria) progress.setAttribute("aria-valuetext",aria);
     }
     const fill = $("souffleProgressFill");
-    if (fill) fill.style.width = `${visible / 11 * 100}%`;
+    const width = `${visible / 11 * 100}%`;
+    if (fill && fill.style.width !== width) fill.style.width = width;
   }
 
   function guideForStep(step) {
     const hint = $("souffleStepHint")?.textContent?.trim();
-    const fallback = FALLBACK_GUIDES[step] || hint || "화면 안내에 따라 진행해주세요.";
-    return fallback;
+    return FALLBACK_GUIDES[step] || hint || "화면 안내에 따라 진행해주세요.";
   }
 
   function updateGuide(step) {
@@ -69,9 +90,10 @@
     const guide = ensureGuide();
     if (!guide) return;
     const title = $("souffleStepTitle")?.textContent || "수플레 만들기";
-    guide.querySelector("strong").textContent = title;
-    guide.querySelector("small").textContent = guideForStep(step);
-    guide.dataset.step = String(INTERNAL_TO_VISIBLE[step] || step);
+    setText(guide.querySelector("strong"),title);
+    setText(guide.querySelector("small"),guideForStep(step));
+    const visible = String(INTERNAL_TO_VISIBLE[step] || step);
+    if (guide.dataset.step !== visible) guide.dataset.step = visible;
   }
 
   function applyNotionAsset(el, kind) {
@@ -133,9 +155,10 @@
     if (!step || step === 7) return;
     const guide = ensureGuide();
     if (!guide) return;
+    const copy = guide.querySelector("small");
     const sugar = $("sugarSlot")?.querySelector(".sugar-dose span")?.textContent?.trim();
     if (step === 6 && sugar) {
-      guide.querySelector("small").textContent = `설탕 ${sugar}을 볼에 넣은 뒤 거품기를 움직여 충분히 휘핑해주세요.`;
+      setText(copy,`설탕 ${sugar}을 볼에 넣은 뒤 거품기를 움직여 충분히 휘핑해주세요.`);
       return;
     }
     const cue = $("souffleWorkArea")?.querySelector(".gesture-cue")?.textContent?.trim() || "";
@@ -147,7 +170,7 @@
       "12 SEC":"조금만 더 익혀주세요.",
       "GREEN = TAP":"바늘이 초록 영역에 들어왔을 때 ‘지금!’을 눌러주세요."
     }[cue];
-    if (cueGuide) guide.querySelector("small").textContent = cueGuide;
+    if (cueGuide) setText(copy,cueGuide);
   }
 
   function autoSkipPeak() {
@@ -161,8 +184,9 @@
     peakSkipped = true;
     const originalCapture = whisk.setPointerCapture;
     try { whisk.setPointerCapture = () => {}; } catch (_) {}
-    const down = new PointerEvent("pointerdown", { bubbles:true, cancelable:true, pointerId:77, clientY:220 });
-    const up = new PointerEvent("pointerup", { bubbles:true, cancelable:true, pointerId:77, clientY:100 });
+    const Evt = window.PointerEvent || window.MouseEvent;
+    const down = new Evt("pointerdown", { bubbles:true, cancelable:true, pointerId:77, clientY:220 });
+    const up = new Evt("pointerup", { bubbles:true, cancelable:true, pointerId:77, clientY:100 });
     whisk.dispatchEvent(down);
     whisk.dispatchEvent(up);
     try {
