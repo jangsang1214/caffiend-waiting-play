@@ -25,6 +25,7 @@ jobs:
           node --check side-games.js
           node --check souffle-service.js
           node --check souffle-game.js
+          node --check souffle-revision.js
           node --check scripts/smoke-check.mjs
           node --check scripts/souffle-contract-check.mjs
       - name: Check required files
@@ -33,6 +34,7 @@ jobs:
           test -f style.css
           test -f souffle.css
           test -f souffle-v2.css
+          test -f souffle-revision.css
           test -f README.md
           test -f FIELD_TEST.md
           test -f SUPABASE_ACTIVATION.md
@@ -41,6 +43,7 @@ jobs:
           test -f side-games.js
           test -f souffle-service.js
           test -f souffle-game.js
+          test -f souffle-revision.js
           test -f scripts/smoke-check.mjs
           test -f scripts/souffle-contract-check.mjs
           test -f assets/menu/README.md
@@ -56,6 +59,8 @@ jobs:
           grep -q 'completionBonus: 150' config.js
           grep -q 'steps: 12' config.js
           grep -q 'souffleApi:' config.js
+          grep -q 'INTERNAL_TO_VISIBLE' souffle-revision.js
+          grep -q 'case 7' souffle-game.js
       - name: Run static smoke checks
         run: node scripts/smoke-check.mjs
       - name: Run souffle scoring and backend contract checks
