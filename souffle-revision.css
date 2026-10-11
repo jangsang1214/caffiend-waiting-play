@@ -1,0 +1,219 @@
+/* CAFFIEND Soufflé revision layer — guide emphasis + visual ingredient tokens */
+
+.souffle-guide-message{
+  margin:12px 16px 6px;
+  padding:13px 15px 14px;
+  border-radius:18px;
+  background:rgba(255,250,242,.94);
+  border:1px solid rgba(100,67,44,.12);
+  box-shadow:0 8px 22px rgba(78,49,29,.09);
+  display:grid;
+  grid-template-columns:auto 1fr;
+  grid-template-areas:"badge title" "badge copy";
+  column-gap:10px;
+  align-items:center;
+}
+.souffle-guide-message .guide-badge{
+  grid-area:badge;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-width:58px;
+  height:32px;
+  padding:0 9px;
+  border-radius:999px;
+  background:#603d2a;
+  color:#fff8ef;
+  font-size:11px;
+  font-weight:900;
+  letter-spacing:-.02em;
+}
+.souffle-guide-message strong{
+  grid-area:title;
+  color:#5f3c29;
+  font-size:14px;
+  font-weight:900;
+  line-height:1.25;
+}
+.souffle-guide-message small{
+  grid-area:copy;
+  margin-top:3px;
+  color:#745743;
+  font-size:12px;
+  font-weight:700;
+  line-height:1.45;
+}
+.souffle-work-area.auto-skip-step{
+  opacity:0;
+  pointer-events:none;
+}
+
+.ingredient-token,
+.sugar-dose,
+.sifter,
+.oil-brush,
+.batter-cup,
+.water-spoon{
+  overflow:visible;
+}
+.ingredient-token[data-visualized="1"]{
+  min-height:86px;
+  padding-top:7px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:4px;
+}
+.ingredient-token[data-visualized="1"] > span:not(.ingredient-picture){
+  font-size:11px;
+  font-weight:900;
+}
+.ingredient-picture{
+  position:relative;
+  width:48px;
+  height:48px;
+  border-radius:15px;
+  display:block;
+  flex:0 0 auto;
+  background:linear-gradient(145deg,#fffef9,#f3dfc8);
+  border:1px solid rgba(107,71,45,.14);
+  box-shadow:0 5px 12px rgba(78,47,26,.11), inset 0 1px rgba(255,255,255,.9);
+}
+.ingredient-picture.compact{
+  width:34px;
+  height:34px;
+  border-radius:11px;
+  margin:0 auto 4px;
+}
+.ingredient-picture.has-image{
+  overflow:hidden;
+  background:#fff;
+}
+.ingredient-picture.has-image img{
+  width:100%;
+  height:100%;
+  object-fit:contain;
+  display:block;
+}
+.ingredient-picture::before,
+.ingredient-picture::after{
+  content:"";
+  position:absolute;
+  display:block;
+}
+
+/* sugar bag */
+.ingredient-picture.kind-sugar::before,
+.ingredient-picture.kind-flour::before{
+  left:11px;right:11px;top:8px;bottom:8px;
+  border-radius:7px 7px 10px 10px;
+  background:linear-gradient(180deg,#fff,#eee4d8);
+  border:1px solid rgba(98,66,44,.20);
+  transform:perspective(35px) rotateX(-3deg);
+}
+.ingredient-picture.kind-sugar::after{
+  content:"SUGAR";
+  left:12px;right:12px;top:20px;
+  color:#c88c64;
+  font-size:7px;
+  font-weight:900;
+  text-align:center;
+  letter-spacing:.02em;
+}
+.ingredient-picture.kind-flour::after{
+  content:"FLOUR";
+  left:11px;right:11px;top:20px;
+  color:#9e7b62;
+  font-size:6px;
+  font-weight:900;
+  text-align:center;
+  letter-spacing:.02em;
+}
+
+/* milk carton */
+.ingredient-picture.kind-milk::before{
+  width:22px;height:31px;left:13px;top:10px;
+  border-radius:3px 3px 5px 5px;
+  background:linear-gradient(90deg,#fff 0 66%,#e9f3f6 66%);
+  border:1px solid #b7c8cc;
+  box-shadow:inset 0 -8px #d9eef3;
+}
+.ingredient-picture.kind-milk::after{
+  width:17px;height:8px;left:15px;top:6px;
+  background:#f8ffff;
+  border:1px solid #b7c8cc;
+  transform:skew(-19deg);
+  border-radius:2px;
+}
+
+/* vanilla oil bottle */
+.ingredient-picture.kind-vanilla::before,
+.ingredient-picture.kind-oil::before{
+  width:18px;height:29px;left:15px;top:13px;
+  border-radius:5px 5px 7px 7px;
+  background:linear-gradient(90deg,#b87433,#e1a963 55%,#9b5f2b);
+  border:1px solid rgba(87,48,17,.32);
+  box-shadow:inset 3px 0 rgba(255,255,255,.16);
+}
+.ingredient-picture.kind-vanilla::after,
+.ingredient-picture.kind-oil::after{
+  width:10px;height:7px;left:19px;top:7px;
+  border-radius:3px 3px 1px 1px;
+  background:#5d3b25;
+}
+.ingredient-picture.kind-oil::before{
+  background:linear-gradient(90deg,#b98f23,#e7c44d 55%,#9c771d);
+}
+
+/* salt shaker */
+.ingredient-picture.kind-salt::before{
+  width:21px;height:25px;left:13px;top:16px;
+  border-radius:7px 7px 8px 8px;
+  background:linear-gradient(90deg,#edf1f3,#fff 48%,#e1e6e9);
+  border:1px solid #b8c0c4;
+}
+.ingredient-picture.kind-salt::after{
+  width:20px;height:7px;left:13px;top:10px;
+  border-radius:5px 5px 2px 2px;
+  background:radial-gradient(circle at 5px 3px,#778188 0 1px,transparent 1.2px),radial-gradient(circle at 10px 3px,#778188 0 1px,transparent 1.2px),radial-gradient(circle at 15px 3px,#778188 0 1px,transparent 1.2px),linear-gradient(#c4cbd0,#9fa8ae);
+}
+
+/* batter cup */
+.ingredient-picture.kind-batter::before{
+  width:26px;height:23px;left:11px;top:15px;
+  border-radius:5px 5px 10px 10px;
+  background:linear-gradient(#f5ca83,#dfa758);
+  border:1px solid #a16e35;
+  box-shadow:inset 0 6px rgba(255,243,210,.55);
+}
+.ingredient-picture.kind-batter::after{
+  width:10px;height:13px;right:7px;top:19px;
+  border:3px solid #a16e35;
+  border-left:0;
+  border-radius:0 9px 9px 0;
+}
+
+/* water spoon */
+.ingredient-picture.kind-water::before{
+  width:18px;height:12px;left:8px;top:20px;
+  border-radius:50%;
+  background:linear-gradient(#eefaff,#bde5f3);
+  border:1px solid #8ebdce;
+  transform:rotate(-18deg);
+}
+.ingredient-picture.kind-water::after{
+  width:20px;height:4px;left:24px;top:25px;
+  border-radius:4px;
+  background:#a6b3b9;
+  transform:rotate(-18deg);
+  transform-origin:left center;
+}
+
+@media (max-width:390px){
+  .souffle-guide-message{margin:10px 12px 4px;padding:11px 12px;border-radius:16px}
+  .souffle-guide-message .guide-badge{min-width:52px;height:29px;font-size:10px}
+  .souffle-guide-message strong{font-size:13px}
+  .souffle-guide-message small{font-size:11px}
+  .ingredient-picture{width:43px;height:43px}
+}
