@@ -6,8 +6,19 @@
     link.href=href;
     document.head.appendChild(link);
   }
+  function loadScript(src) {
+    if (document.querySelector(`script[src="${src}"]`)) return;
+    const script=document.createElement("script");
+    script.src=src;
+    script.defer=true;
+    document.head.appendChild(script);
+  }
   loadStyle("./souffle.css?v=2.0.0");
   loadStyle("./souffle-v2.css?v=2.0.0");
+  loadStyle("./souffle-revision.css?v=2.0.1");
+  const loadRevision=()=>loadScript("./souffle-revision.js?v=2.0.1");
+  if(document.readyState==="complete") loadRevision();
+  else window.addEventListener("load",loadRevision,{once:true});
 
   const $ = id => document.getElementById(id);
   const EXP = window.DigulExperience;
